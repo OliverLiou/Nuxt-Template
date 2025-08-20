@@ -1,0 +1,17 @@
+{
+  "welcome": "Welcome",
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "contact": "Contact"
+  },
+  "ui": {
+    "menu": "Menu",
+    "close": "Close",
+    "language": "Language"
+  },
+  "footer": {
+    "copyright": "© {year} Yi-Gang Liou. All rights reserved."
+  }
+}
