@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@iconify-json/svg-spinners": "^1.2.4",
     "@nuxt/icon": "^2.0.0",
     "@nuxt/ui": "^3.3.2",
     "@nuxtjs/i18n": "^10.0.5",

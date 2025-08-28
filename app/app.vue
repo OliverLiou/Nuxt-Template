@@ -9,10 +9,10 @@
     <!-- Main Content -->
     <main class="flex-1">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $t('welcome') }}</h1> -->
-        
         <!-- Page content will be inserted here when using NuxtPage -->
-        <!-- <NuxtPage /> -->
+        <UApp :toaster="toaster">
+          <NuxtPage />
+        </UApp>
       </div>
     </main>
     
@@ -22,8 +22,12 @@
 </template>
 
 <script setup>
-// Import components are auto-imported by Nuxt
-// No need to explicitly import Header, SideBar, Footer
+// 認證狀態會在 store 中自動初始化
+
+const toaster = {
+  position: 'bottom-left',
+  pauseOnHover: true,
+}
 </script>
 
 <style>

@@ -13,5 +13,17 @@
   },
   "footer": {
     "copyright": "© {year} 劉亦剛 版權所有"
+  },
+  "header": {
+    "title": "樣板網站",
+    "login": "登入"
+  },
+  "auth": {
+    "loginWithGoogle": "使用 Google 帳戶登入"
+  },
+  "pages": {
+    "index": {
+      "heading": "這是首頁"
+    }
   }
 }

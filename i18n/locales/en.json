@@ -13,5 +13,17 @@
   },
   "footer": {
     "copyright": "© {year} Yi-Gang Liou. All rights reserved."
+  },
+  "header": {
+    "title": "Template Web",
+    "login": "Login"
+  },
+  "auth": {
+    "loginWithGoogle": "Sign In With Google"
+  },
+  "pages": {
+    "index": {
+      "heading": "This is Home Page."
+    }
   }
 }
