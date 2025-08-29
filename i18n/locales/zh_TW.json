@@ -16,7 +16,8 @@
   },
   "header": {
     "title": "樣板網站",
-    "login": "登入"
+    "logOut": "登出系統",
+    "language": "語言"
   },
   "auth": {
     "loginWithGoogle": "使用 Google 帳戶登入"

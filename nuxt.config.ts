@@ -37,4 +37,13 @@ export default defineNuxtConfig({
       apiBaseUrl: process.env.API_BASE_URL || "http://localhost:5001",
     },
   },
+  nitro: {
+    routeRules: {
+      "/**": {
+        headers: {
+          "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+        },
+      },
+    },
+  },
 });

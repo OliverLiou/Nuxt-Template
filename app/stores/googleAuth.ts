@@ -111,8 +111,8 @@ export const useGoogleAuthStore = defineStore('googleAuth', () => {
       setErrorMessage('Google 服務未載入')
       return false
     }
-
     const container = document.getElementById(containerId)
+
     if (!container) {
       console.error(`Container with id '${containerId}' not found`)
       return false

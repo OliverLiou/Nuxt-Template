@@ -50,7 +50,7 @@
         <!-- Auth & Language Switcher & Mobile Menu Button -->
         <div class="flex items-center space-x-4">
           <!-- Language Switcher -->
-          <div class="hidden sm:block">
+          <!-- <div class="hidden sm:block">
             <UDropdownMenu
               :items="languageItems"
               :content="{ align: 'center', side: 'bottom', sideOffset: 8 }"
@@ -66,24 +66,19 @@
                 {{ currentLocaleName }}
               </UButton>
             </UDropdownMenu>
-          </div>
+          </div> -->
+          
           <!-- User Menu (when logged in) -->
-          <UIcon v-if="isLoading" name="i-svg-spinners-ring-resize" class="!size-6" />
+          <UIcon v-if="isLoading" name="i-svg-spinners-ring-resize" class="!size-7" />
           <div v-if="isLoggedIn && user" class="hidden sm:block">
             <UDropdownMenu
+              :arrow="true"
               :items="userMenuItems"
               :content="{ align: 'center', side: 'bottom', sideOffset: 8 }"
             >
               <UButton variant="ghost" color="neutral">
-                <div class="flex items-center space-x-2">
-                  <img 
-                    v-if="user.picture" 
-                    :src="user.picture" 
-                    :alt="user.userName"
-                    class="size-8 rounded-full"
-                  >
-                  <span class="hidden md:inline-block">{{ user.userName }}</span>
-                </div>
+                <UAvatar :src="user.picture" :alt="user.userName" class="size-6" />
+                <span class="hidden md:inline-block">{{ user.userName }}</span>
               </UButton>
             </UDropdownMenu>
           </div>
@@ -103,17 +98,21 @@
                   class="w-full"
                 />
               </template>
-              <UButton
-                variant="outline"
-                color="neutral"
-              >
+              <UButton variant="ghost" color="neutral">
                 <template #leading>
-                  <UIcon name="i-heroicons-user-circle" class="!size-5" />
+                  <UAvatar icon="i-heroicons-user-solid" :ui="{ icon: '!size-7'}" />
                 </template>
-                {{ $t('header.login') }}
               </UButton>       
             </UDropdownMenu>
           </div>
+
+          <!-- Setting Menu -->
+          <UDropdownMenu
+            arrow
+            :items="settingMenuItems"
+          >
+            <UButton icon="heroicons:cog-8-tooth-solid" color="neutral" variant="ghost" :ui="{ leadingIcon: '!size-6' }" />
+          </UDropdownMenu>
 
           <!-- Mobile Menu Button -->
           <UButton
@@ -132,6 +131,8 @@
 </template>
 
 <script setup lang="ts">
+import { icons } from '@iconify-json/svg-spinners/index.js';
+
 const { $i18n } = useNuxtApp();
 
 const uiStore = useUIStore()
@@ -142,14 +143,8 @@ const { locale, locales, setLocale } = $i18n
 
 // Google Auth store
 const googleAuthStore = useGoogleAuthStore()
-const { isGoogleLoaded, isLoading, errorMessage } = storeToRefs(googleAuthStore)
-const {
-  initializeGoogle,
-  renderGoogleButton,
-  handleGoogleResponse,
-  loadGoogleSDK,
-  setErrorMessage
-} = googleAuthStore
+const { isGoogleLoaded, isLoading } = storeToRefs(googleAuthStore)
+const { initializeGoogle, renderGoogleButton, loadGoogleSDK, setErrorMessage } = googleAuthStore
 
 const config = useRuntimeConfig()
 
@@ -173,21 +168,30 @@ const languageItems = computed(() => {
   }))
 })
 
-// 用戶選單項目
-const userMenuItems = computed(() => [
+const settingMenuItems = reactive([
   {
-    label: '登出',
-    icon: 'i-heroicons-arrow-right-start-on-rectangle-16-solid',
-    onSelect: logout
+    label: $t('header.language'),
+    icon: 'i-heroicons-language',
+    ui: {
+      itemLeadingIcon: '!size-5'
+    },
+    children: languageItems
   }
 ])
 
-const loginMenuItems = computed(() => [
+// 用戶選單項目
+const userMenuItems = computed(() => [
   {
-    // label: $t('auth.loginWithGoogle'),
-    // icon: 'i-logos-google-icon',
+    label: $t('header.logOut'),
+    icon: 'i-heroicons-arrow-right-start-on-rectangle-16-solid',
+    onSelect: logout,
+    ui: {
+      itemLeadingIcon: "!size-5"
+    }
   }
 ])
+
+const loginMenuItems = computed(() => [{}])
 
 // Google 登入相關邏輯
 const googleClientId = config.public.googleClientId
@@ -230,11 +234,9 @@ const googleButtonContainer = ref<HTMLElement>()
 
 // 渲染 Google 按鈕的函數
 const renderGoogleButtonWhenReady = () => {
+  // console.log(isGoogleLoaded.value, googleButtonContainer.value, loginDropDownIsOpen.value)
   if (isGoogleLoaded.value && googleButtonContainer.value && loginDropDownIsOpen.value) {
-    // 清空容器內容，避免重複渲染
-    // googleButtonContainer.value.innerHTML = ''
-    const success = renderGoogleButton('google-signin-button-header')
-    // console.log('Google button render result:', success)
+    renderGoogleButton('google-signin-button-header')
   }
 }
 

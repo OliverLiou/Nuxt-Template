@@ -16,7 +16,8 @@
   },
   "header": {
     "title": "Template Web",
-    "login": "Login"
+    "logOut": "LogOut",
+    "language": "Language"
   },
   "auth": {
     "loginWithGoogle": "Sign In With Google"
