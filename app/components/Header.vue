@@ -14,37 +14,12 @@
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex space-x-8">
-          <!-- <NuxtLink 
-            to="/" 
-            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            {{ $t('nav.home') }}
-          </NuxtLink>
-          <NuxtLink 
-            to="/about" 
-            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            {{ $t('nav.about') }}
-          </NuxtLink>
-          <NuxtLink 
-            to="/services" 
-            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            {{ $t('nav.services') }}
-          </NuxtLink>
-          <NuxtLink 
-            to="/contact" 
-            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            {{ $t('nav.contact') }}
-          </NuxtLink> -->
-
-          <NuxtLink 
-            to="/testpage" 
-            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            TestPage
-          </NuxtLink>
+          <UNavigationMenu
+            highlight
+            color="info"
+            class="w-full justify-center" 
+            :items="navMenuItems"
+          />
         </nav>
 
         <!-- Auth & Language Switcher & Mobile Menu Button -->
@@ -131,8 +106,6 @@
 </template>
 
 <script setup lang="ts">
-import { icons } from '@iconify-json/svg-spinners/index.js';
-
 const { $i18n } = useNuxtApp();
 
 const uiStore = useUIStore()
@@ -178,6 +151,18 @@ const settingMenuItems = reactive([
     children: languageItems
   }
 ])
+
+const navMenuItems = computed(() => {
+  const allRoutes = useRouter().getRoutes();
+  if (allRoutes.length > 0) {
+    return allRoutes.map((r) => {
+      return {
+        label: $t(`nav.${r.path}`),
+        to: r.path
+      }
+    })
+  }
+})
 
 // 用戶選單項目
 const userMenuItems = computed(() => [
@@ -251,6 +236,7 @@ watch(loginDropDownIsOpen, (isOpen) => {
 
 // 載入時初始化 Google Auth
 onMounted(() => {
+  console.log(navMenuItems)
   if (import.meta.client && googleClientId) {
     initializeGoogleAuth()
   }

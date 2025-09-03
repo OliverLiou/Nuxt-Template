@@ -1,10 +1,8 @@
 {
   "welcome": "Welcome",
   "nav": {
-    "home": "Home",
-    "about": "About",
-    "services": "Services",
-    "contact": "Contact"
+    "/": "Home",
+    "/TestPage": "TestPage"
   },
   "ui": {
     "menu": "Menu",
