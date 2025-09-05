@@ -2,7 +2,10 @@
   "welcome": "Welcome",
   "nav": {
     "/": "Home",
-    "/TestPage": "TestPage"
+    "/Page1": "Page1",
+    "/DropDownPage": "DropDownPage",
+    "/DropDownPage/DropDownPage1": "DropDownPage1",
+    "/DropDownPage/DropDownPage2": "DropDownPage2"
   },
   "ui": {
     "menu": "Menu",
@@ -16,9 +19,6 @@
     "title": "Template Web",
     "logOut": "LogOut",
     "language": "Language"
-  },
-  "auth": {
-    "loginWithGoogle": "Sign In With Google"
   },
   "pages": {
     "index": {

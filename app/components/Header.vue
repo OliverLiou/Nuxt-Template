@@ -1,6 +1,6 @@
 <template>
   <header class="bg-white shadow-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex-shrink-0">
@@ -13,36 +13,20 @@
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex space-x-8">
+        <div class="hidden content-start sm:flex">
           <UNavigationMenu
-            highlight
-            color="info"
-            class="w-full justify-center" 
+            highlight-color="secondary"
+            color="secondary"
+            class="justify-center"
+            content-orientation="vertical"
             :items="navMenuItems"
+            :ui="{ link: 'text-base font-bold' }"
           />
-        </nav>
+        </div>
+        
 
         <!-- Auth & Language Switcher & Mobile Menu Button -->
         <div class="flex items-center space-x-4">
-          <!-- Language Switcher -->
-          <!-- <div class="hidden sm:block">
-            <UDropdownMenu
-              :items="languageItems"
-              :content="{ align: 'center', side: 'bottom', sideOffset: 8 }"
-              :ui="{ content: 'w-24'}"
-            >
-              <UButton 
-                variant="outline" 
-                color="neutral"
-              >
-                <template #leading>
-                  <UIcon name="i-heroicons-language" class="!size-5" />
-                </template>
-                {{ currentLocaleName }}
-              </UButton>
-            </UDropdownMenu>
-          </div> -->
-          
           <!-- User Menu (when logged in) -->
           <UIcon v-if="isLoading" name="i-svg-spinners-ring-resize" class="!size-7" />
           <div v-if="isLoggedIn && user" class="hidden sm:block">
@@ -106,8 +90,9 @@
 </template>
 
 <script setup lang="ts">
-const { $i18n } = useNuxtApp();
+import type { NavigationMenuItem } from '@nuxt/ui'
 
+const { $i18n } = useNuxtApp();
 const uiStore = useUIStore()
 const authStore = useAuthStore()
 const { user, isLoggedIn } = storeToRefs(authStore)
@@ -154,14 +139,35 @@ const settingMenuItems = reactive([
 
 const navMenuItems = computed(() => {
   const allRoutes = useRouter().getRoutes();
-  if (allRoutes.length > 0) {
-    return allRoutes.map((r) => {
-      return {
-        label: $t(`nav.${r.path}`),
-        to: r.path
-      }
-    })
-  }
+  // console.log(allRoutes)
+
+  const navMaps = allRoutes.filter(s => s.path !== '/').map((s : any) => {
+    const firstSegment = s.name.split("-")
+    return {
+      key: firstSegment[0],
+      to: s.path,
+      label: $t(`nav.${s.path}`),
+      icon: s.meta.icon ?? null
+    }
+  })
+  // console.log(navMaps)
+
+  let result: NavigationMenuItem[] = []
+  const { path } = useRoute()
+  navMaps.forEach((item, index) => {
+    if (item.to == `/${item.key}`) {
+      result.push({
+        label: item.label,
+        to: item.to,
+        icon: item.icon,
+        children: navMaps.filter(s => index != navMaps.indexOf(s) && s.key == item.key),
+        active: path.includes(item.to)
+      }) 
+    }
+  })
+  // console.log(result)
+
+  return result;
 })
 
 // 用戶選單項目
@@ -236,7 +242,6 @@ watch(loginDropDownIsOpen, (isOpen) => {
 
 // 載入時初始化 Google Auth
 onMounted(() => {
-  console.log(navMenuItems)
   if (import.meta.client && googleClientId) {
     initializeGoogleAuth()
   }
