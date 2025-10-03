@@ -208,7 +208,7 @@ const googleButtonContainer = ref<HTMLElement>()
 
 // 渲染 Google 按鈕的函數
 const renderGoogleButtonWhenReady = () => {
-  console.log(isGoogleLoaded.value, googleButtonContainer.value, settingDropDownIsOpen.value)
+  // console.log(isGoogleLoaded.value, googleButtonContainer.value, settingDropDownIsOpen.value)
   if (isGoogleLoaded.value && googleButtonContainer.value && settingDropDownIsOpen.value) {
     renderGoogleButton('google-signin-button-header')
   }
