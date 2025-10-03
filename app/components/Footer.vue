@@ -1,14 +1,16 @@
 <template>
-  <footer class="bg-gray-900 text-white">
-    <UContainer class="py-4">
-      <div class="text-center">
-        <!-- Copyright -->
-        <p class="text-sm text-gray-300">
-          {{ $t('footer.copyright', {year: $moment().format('YYYY')} ) }}
-        </p>
-      </div>
-    </UContainer>
-  </footer>
+  <UFooter
+    :ui="{
+      root: 'bg-gray-900 text-white',
+      container: 'max-w-10xl px-4 sm:px-4 lg:px-6'
+    }"
+  >
+    <!-- <template #left> -->
+      <p class="text-sm text-gray-300">
+        {{ $t('footer.copyright', {year: $moment().format('YYYY')} ) }}
+      </p>
+    <!-- </template> -->
+  </UFooter>
 </template>
 
 <script setup>

@@ -1,11 +1,16 @@
 {
   "welcome": "Welcome",
   "nav": {
-    "/": "Home",
     "/Page1": "Page1",
     "/DropDownPage": "DropDownPage",
-    "/DropDownPage/DropDownPage1": "DropDownPage1",
-    "/DropDownPage/DropDownPage2": "DropDownPage2"
+    "/DropDownPage/DropDownPage1": {
+      "label": "DropDownPage1",
+      "describe": "This is a describe for DropDownPage1."
+    },
+    "/DropDownPage/DropDownPage2": {
+      "label": "DropDownPage2",
+      "describe": "This is a describe for DropDownPage2."
+    }
   },
   "ui": {
     "menu": "Menu",
@@ -23,6 +28,9 @@
   "pages": {
     "index": {
       "heading": "This is Home Page."
+    },
+    "page1": {
+      "heading": "This is Page1"
     }
   }
 }

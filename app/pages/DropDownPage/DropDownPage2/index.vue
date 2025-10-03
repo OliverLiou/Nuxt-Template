@@ -4,6 +4,6 @@
 
 <script setup lang="ts">
 definePageMeta({
-  ['icon']: 'lucide:file-text'
+  ['icon']: 'lucide-file-text'
 })
 </script>

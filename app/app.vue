@@ -4,7 +4,7 @@
     <Header />
     
     <!-- Sidebar for mobile -->
-    <SideBar />
+    <!-- <SideBar /> -->
     
     <!-- Main Content -->
     <main class="flex-1">

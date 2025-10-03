@@ -1,6 +1,6 @@
 <template>
   <div>
-    this is testpage
+    {{ $t("pages.page1.heading") }}
   </div>
 </template>
 
