@@ -227,14 +227,14 @@ export const useGoogleAuthStore = defineStore('googleAuth', () => {
   })
 
   return {
-    isGoogleLoaded: readonly(isGoogleLoaded),
-    isLoading: readonly(isLoading),
-    errorMessage: readonly(errorMessage),
+    isGoogleLoaded,
+    isLoading,
+    errorMessage,
     initializeGoogle,
     renderGoogleButton,
     handleGoogleResponse,
     loadGoogleSDK,
     checkGoogleLoaded,
     setErrorMessage,
-  };
+  }
 })

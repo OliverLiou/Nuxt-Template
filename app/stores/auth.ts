@@ -245,8 +245,8 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   return {
-    user: readonly(user),
-    token: readonly(token),
+    user,
+    token,
     isLoggedIn,
     initAuth,
     loginWithGoogle,
