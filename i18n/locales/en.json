@@ -1,10 +1,16 @@
 {
   "welcome": "Welcome",
   "nav": {
-    "home": "Home",
-    "about": "About",
-    "services": "Services",
-    "contact": "Contact"
+    "/Page1": "Page1",
+    "/DropDownPage": "DropDownPage",
+    "/DropDownPage/DropDownPage1": {
+      "label": "DropDownPage1",
+      "describe": "This is a describe for DropDownPage1."
+    },
+    "/DropDownPage/DropDownPage2": {
+      "label": "DropDownPage2",
+      "describe": "This is a describe for DropDownPage2."
+    }
   },
   "ui": {
     "menu": "Menu",
@@ -13,5 +19,18 @@
   },
   "footer": {
     "copyright": "© {year} Yi-Gang Liou. All rights reserved."
+  },
+  "header": {
+    "title": "Template Web",
+    "logOut": "LogOut",
+    "language": "Language"
+  },
+  "pages": {
+    "index": {
+      "heading": "This is Home Page."
+    },
+    "page1": {
+      "heading": "This is Page1"
+    }
   }
 }

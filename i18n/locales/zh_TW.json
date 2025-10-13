@@ -1,0 +1,36 @@
+{
+  "welcome": "歡迎",
+  "nav": {
+    "/Page1": "頁面1",
+    "/DropDownPage": "下拉式頁面",
+    "/DropDownPage/DropDownPage1": {
+      "label": "下拉頁面1",
+      "describe": "這是一段下拉頁面1的描述" 
+    },
+    "/DropDownPage/DropDownPage2": {
+      "label": "下拉頁面2",
+      "describe": "這是一段下拉頁面2的描述"
+    }
+  },
+  "ui": {
+    "menu": "選單",
+    "close": "關閉",
+    "language": "語言"
+  },
+  "footer": {
+    "copyright": "© {year} 劉亦剛 版權所有"
+  },
+  "header": {
+    "title": "樣板網站",
+    "logOut": "登出",
+    "language": "語言"
+  },
+  "pages": {
+    "index": {
+      "heading": "這是首頁"
+    },
+    "page1": {
+      "heading": "這是頁面1"
+    }
+  }
+}
