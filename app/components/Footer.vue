@@ -13,8 +13,9 @@
   </UFooter>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { Moment } from 'moment' 
 // Footer component is primarily static
 // No reactive logic needed for basic copyright footer
-const { $moment } = useNuxtApp();
+const { $moment } = useNuxtApp()
 </script>

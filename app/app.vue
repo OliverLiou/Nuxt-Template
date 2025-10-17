@@ -21,11 +21,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // 認證狀態會在 store 中自動初始化
 
 const toaster = {
-  position: 'bottom-left',
+  position: 'bottom-left' as const,
   pauseOnHover: true,
 }
 </script>

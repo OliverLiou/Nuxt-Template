@@ -1,5 +1,11 @@
-import moment from "moment";
+import moment from 'moment'
 
 export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.$moment = moment;
-});
+  nuxtApp.$moment = moment
+})
+
+declare module '#app' {
+  interface NuxtApp {
+    $moment: typeof moment
+  }
+}
