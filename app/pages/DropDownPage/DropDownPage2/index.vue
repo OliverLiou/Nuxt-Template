@@ -1,5 +1,7 @@
 <template>
-  <div></div>
+  <div>
+    {{ $t("nav./DropDownPage/DropDownPage2.describe") }}
+  </div>
 </template>
 
 <script setup lang="ts">

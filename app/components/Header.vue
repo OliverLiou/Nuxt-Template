@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const { $i18n } = useNuxtApp();
+const { $i18n } = useNuxtApp()
 const authStore = useAuthStore()
 const { user, isLoggedIn } = storeToRefs(authStore)
 const { logout } = authStore
@@ -128,21 +128,21 @@ const settingMenuItems = computed(() => {
         checked: l.code === locale.value,
         onSelect: () => setLocale(l.code),
         onUpdateChecked(checked: boolean) {
-          l.checked = checked;
+          l.checked = checked
         }
       }))
     }
   ]
-  
+
   return [userDropdownItem, languageDropdownItem]
 })
 
 const navMenuItems = computed(() => {
-  const allRoutes = useRouter().getRoutes();
+  const allRoutes = useRouter().getRoutes()
   // console.log(allRoutes)
   const nav = $tm('nav') as any
   const navMaps = allRoutes.filter(s => s.path !== '/').map((s : any) => {
-    const firstSegment = s.name.split("-")
+    const firstSegment = s.name.split('-')
     return {
       key: firstSegment[0],
       to: s.path,
@@ -162,10 +162,10 @@ const navMenuItems = computed(() => {
         icon: item.icon,
         children: navMaps.filter(s => index != navMaps.indexOf(s) && s.key == item.key),
         active: path.includes(item.to)
-      }) 
+      })
     }
   })
-  return result;
+  return result
 })
 
 // Google 登入相關邏輯
