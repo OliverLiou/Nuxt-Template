@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "_Nuxt_Template",
   "type": "module",
   "private": true,
   "scripts": {
@@ -7,30 +7,13 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "start": "node .output/server/index.mjs"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@iconify-json/svg-spinners": "^1.2.4",
-    "@nuxt/icon": "^2.0.0",
-    "@nuxt/ui": "^4.0.1",
-    "@nuxtjs/i18n": "^10.0.5",
-    "@pinia/nuxt": "^0.11.2",
-    "@tailwindcss/vite": "^4.1.12",
-    "moment": "^2.30.1",
-    "nuxt": "^4.0.3",
-    "pinia": "^3.0.3",
-    "tailwindcss": "^4.1.12",
-    "vue": "^3.5.18",
-    "vue-router": "^4.5.1"
-  },
-  "devDependencies": {
-    "@iconify-json/heroicons": "^1.2.3",
-    "@iconify-json/lucide": "^1.2.69",
-    "@iconify-json/mdi": "^1.2.3"
-  },
-  "engines": {
-    "node": "22.13.0",
-    "npm": "11.6.0"
+    "@nuxt/ui": "^4.8.2",
+    "nuxt": "^4.4.8",
+    "tailwindcss": "^4.3.1",
+    "vue": "^3.5.35",
+    "vue-router": "^5.1.0"
   }
 }

@@ -1,2 +1,0 @@
-- 根據 @CODING_STYLE.md 規範, 撰寫這個專案的程式碼
-- 需要使用元件(component)時, 請先讀取 @NuxtUI_Components.md 的規範

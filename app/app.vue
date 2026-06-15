@@ -1,35 +1,6 @@
 <template>
-  <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <Header />
-    
-    <!-- Sidebar for mobile -->
-    <!-- <SideBar /> -->
-    
-    <!-- Main Content -->
-    <main class="flex-1">
-      <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page content will be inserted here when using NuxtPage -->
-        <UApp :toaster="toaster">
-          <NuxtPage />
-        </UApp>
-      </div>
-    </main>
-    
-    <!-- Footer -->
-    <Footer />
+  <div>
+    <!-- <NuxtRouteAnnouncer />
+    <NuxtWelcome /> -->
   </div>
 </template>
-
-<script setup lang="ts">
-// 認證狀態會在 store 中自動初始化
-
-const toaster = {
-  position: 'bottom-left' as const,
-  pauseOnHover: true,
-}
-</script>
-
-<style>
-/* Global styles can be added here if needed */
-</style>
