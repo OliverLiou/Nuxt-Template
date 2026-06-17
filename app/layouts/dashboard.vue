@@ -142,14 +142,22 @@ const userMenuItems = [
 
       <!-- 側邊欄底部 Footer -->
       <template #footer="{ collapsed }">
-        <UDropdownMenu :items="userMenuItems" class="w-full">
+        <UDropdownMenu 
+          :items="userMenuItems"
+          :content="{ align: 'center', collisionPadding: 12 }"
+        >
           <UButton
-            leading-icon="i-lucide-user"
+            :avatar="{
+              src: userStore.user?.Picture || undefined,
+              icon: 'i-lucide-user',
+              size: 'sm'
+            }"
             :label="collapsed ? undefined : (userStore.user?.EmployeeName || '使用者')"
             color="neutral"
             variant="ghost"
-            class="w-full"
-            :block="collapsed"
+            block
+            :trailing-icon="collapsed ? undefined : 'i-lucide-chevrons-up-down'"
+            :square="collapsed"
           />
         </UDropdownMenu>
       </template>
