@@ -1,6 +1,6 @@
 export const useAPI = createUseFetch((callerOptions) => {
   const config = useRuntimeConfig()
-  const token = useCookie('auth_token')
+  const token = useCookie('access_token')
 
   return {
     baseURL: config.public.apiBase || '',

@@ -78,6 +78,14 @@ const navigationItems = computed<NavigationMenuItem[]>(() => {
     })
 })
 
+const userStore = useUserStore()
+const showLogoutModal = ref(false)
+
+function handleLogout() {
+  userStore.logOut()
+  navigateTo('/login')
+}
+
 // 使用者下拉選單項目 (個人資訊、登出)
 const userMenuItems = [
   [
@@ -95,7 +103,7 @@ const userMenuItems = [
       icon: 'i-lucide-log-out',
       color: 'error' as const,
       onSelect: () => {
-        // alert('點擊了登出')
+        showLogoutModal.value = true
       }
     }
   ]
@@ -137,7 +145,7 @@ const userMenuItems = [
         <UDropdownMenu :items="userMenuItems" class="w-full">
           <UButton
             leading-icon="i-lucide-user"
-            :label="collapsed ? undefined : 'Benjamin'"
+            :label="collapsed ? undefined : (userStore.user?.EmployeeName || '使用者')"
             color="neutral"
             variant="ghost"
             class="w-full"
@@ -164,4 +172,12 @@ const userMenuItems = [
       </template>
     </UDashboardPanel>
   </UDashboardGroup>
+
+  <BaseModal
+    v-model:open="showLogoutModal"
+    mode="confirm"
+    title="登出確認"
+    description="您確定要登出系統嗎？"
+    @confirm="handleLogout"
+  />
 </template>
