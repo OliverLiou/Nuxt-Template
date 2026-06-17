@@ -5,6 +5,11 @@ export default defineNuxtConfig({
   ssr: false,
   modules: ['@nuxt/ui', '@nuxt/icon'],
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      apiBase: '', // 可以透過 NUXT_PUBLIC_API_BASE 環境變數覆寫
+    }
+  },
   vite: {
     optimizeDeps: {
       include: [
