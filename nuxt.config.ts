@@ -17,5 +17,10 @@ export default defineNuxtConfig({
         '@vue/devtools-kit',
       ]
     }
+  },
+  app: {
+    head: {
+      title: 'Dashboard-Template'
+    }
   }
 })

@@ -16,6 +16,12 @@ export enum HttpMethod {
 // 1. 認證相關型別 (Auth Types)
 // ============================================================================
 
+/** 一般登入請求物件 */
+export interface LoginRequest {
+  UserName?: string | null
+  Password?: string | null
+}
+
 /** AD 登入請求物件 */
 export interface AdLoginRequest {
   UserName: string
@@ -66,6 +72,22 @@ export interface Table1ResponsePagedResult {
   TotalCount?: number
 }
 
+/** 使用者回應物件 */
+export interface UserResponse {
+  Id?: string | null
+  UserName?: string | null
+  EmployeeName?: string | null
+  Email?: string | null
+  Picture?: string | null
+  RoleNames?: string[] | null
+}
+
+/** 使用者分頁查詢結果包裝物件 */
+export interface UserResponsePagedResult {
+  Items?: UserResponse[] | null
+  TotalCount?: number
+}
+
 // ============================================================================
 // 3. API Repository 實作
 // ============================================================================
@@ -73,6 +95,15 @@ export interface Table1ResponsePagedResult {
 export const apiRepository = {
   /** 認證與使用者相關端點 */
   auth: {
+    /** 一般登入，驗證成功後會回傳 JWT access token 和 refresh token */
+    login(body: LoginRequest, options?: UseFetchOptions<AuthResponse>) {
+      return useAPI<AuthResponse>('/Auth/Login', {
+        method: HttpMethod.POST,
+        body,
+        ...options,
+      })
+    },
+
     /** AD 登入，驗證成功後會自動建立使用者資料，並回傳 JWT AccessToken 和 RefreshToken */
     adLogin(body: AdLoginRequest, options?: UseFetchOptions<AuthResponse>) {
       return useAPI<AuthResponse>('/Auth/AdLogin', {
@@ -153,6 +184,20 @@ export const apiRepository = {
       options?: UseFetchOptions<Table1ResponsePagedResult>
     ) {
       return useAPI<Table1ResponsePagedResult>(`/Data/FindTable1/${currentPage}/${pageSize}`, {
+        method: HttpMethod.GET,
+        query: querySearch ? { querySearch } : undefined,
+        ...options,
+      })
+    },
+
+    /** 分頁查詢使用者資料 */
+    findUsers(
+      currentPage: number,
+      pageSize: number,
+      querySearch?: string,
+      options?: UseFetchOptions<UserResponsePagedResult>
+    ) {
+      return useAPI<UserResponsePagedResult>(`/Data/FindUsers/${currentPage}/${pageSize}`, {
         method: HttpMethod.GET,
         query: querySearch ? { querySearch } : undefined,
         ...options,
