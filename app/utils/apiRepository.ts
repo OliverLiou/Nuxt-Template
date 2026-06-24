@@ -96,8 +96,8 @@ export const apiRepository = {
   /** 認證與使用者相關端點 */
   auth: {
     /** 一般登入，驗證成功後會回傳 JWT access token 和 refresh token */
-    login(body: LoginRequest, options?: UseFetchOptions<AuthResponse>) {
-      return useAPI<AuthResponse>('/Auth/Login', {
+    login(body: LoginRequest, options?: any) {
+      return $api<AuthResponse>('/Auth/Login', {
         method: HttpMethod.POST,
         body,
         ...options,
@@ -105,8 +105,8 @@ export const apiRepository = {
     },
 
     /** AD 登入，驗證成功後會自動建立使用者資料，並回傳 JWT AccessToken 和 RefreshToken */
-    adLogin(body: AdLoginRequest, options?: UseFetchOptions<AuthResponse>) {
-      return useAPI<AuthResponse>('/Auth/AdLogin', {
+    adLogin(body: AdLoginRequest, options?: any) {
+      return $api<AuthResponse>('/Auth/AdLogin', {
         method: HttpMethod.POST,
         body,
         ...options,
@@ -122,8 +122,8 @@ export const apiRepository = {
     },
 
     /** 使用 Refresh Token 換發新的 Access Token */
-    refreshToken(body: RefreshTokenRequest, options?: UseFetchOptions<AuthResponse>) {
-      return useAPI<AuthResponse>('/Auth/RefreshToken', {
+    refreshToken(body: RefreshTokenRequest, options?: any) {
+      return $api<AuthResponse>('/Auth/RefreshToken', {
         method: HttpMethod.POST,
         body,
         ...options,
@@ -142,8 +142,8 @@ export const apiRepository = {
     },
 
     /** 儲存單筆 Table1 資料 */
-    table1SingleSave(body: Table1Request, options?: UseFetchOptions<any>) {
-      return useAPI<any>('/Data/Table1SingleSave', {
+    table1SingleSave(body: Table1Request, options?: any) {
+      return $api<any>('/Data/Table1SingleSave', {
         method: HttpMethod.POST,
         body,
         ...options,
@@ -151,8 +151,8 @@ export const apiRepository = {
     },
 
     /** 儲存多筆 Table1 資料 */
-    table1MultipleSave(body: Table1Request[], options?: UseFetchOptions<any>) {
-      return useAPI<any>('/Data/Table1MutipleSave', {
+    table1MultipleSave(body: Table1Request[], options?: any) {
+      return $api<any>('/Data/Table1MutipleSave', {
         method: HttpMethod.POST,
         body,
         ...options,
@@ -160,8 +160,8 @@ export const apiRepository = {
     },
 
     /** 刪除指定的 Table1 資料 */
-    deleteTable1Data(table1Id: number, options?: UseFetchOptions<any>) {
-      return useAPI<any>('/Data/DeleteTable1Data', {
+    deleteTable1Data(table1Id: number, options?: any) {
+      return $api<any>('/Data/DeleteTable1Data', {
         method: HttpMethod.DELETE,
         query: { table1Id },
         ...options,

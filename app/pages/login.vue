@@ -113,19 +113,14 @@ async function onAdSubmit(event: FormSubmitEvent<AdSchema>) {
   errorMessage.value = ''
   
   try {
-    const { data, error } = await apiRepository.auth.adLogin({
+    const data = await apiRepository.auth.adLogin({
       UserName: event.data.UserName,
       Password: event.data.Password
     })
 
-    if (error.value) {
-      errorMessage.value = error.value.data?.message || error.value.message || '登入失敗，請確認帳號與密碼'
-      return
-    }
-
-    await handleLoginSuccess(data.value)
+    await handleLoginSuccess(data)
   } catch (err: any) {
-    errorMessage.value = err.message || '登入過程發生未知異常'
+    errorMessage.value = err.data?.message || err.message || '登入失敗，請確認帳號與密碼'
   } finally {
     loading.value = false
   }
@@ -137,19 +132,14 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
   errorMessage.value = ''
   
   try {
-    const { data, error } = await apiRepository.auth.login({
+    const data = await apiRepository.auth.login({
       UserName: event.data.UserName,
       Password: event.data.Password
     })
 
-    if (error.value) {
-      errorMessage.value = error.value.data?.message || error.value.message || '登入失敗，請確認帳號與密碼'
-      return
-    }
-
-    await handleLoginSuccess(data.value)
+    await handleLoginSuccess(data)
   } catch (err: any) {
-    errorMessage.value = err.message || '登入過程發生未知異常'
+    errorMessage.value = err.data?.message || err.message || '登入失敗，請確認帳號與密碼'
   } finally {
     loading.value = false
   }

@@ -21,19 +21,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (refreshToken.value) {
       try {
         // 向後端換發 Token
-        const { data, error } = await apiRepository.auth.refreshToken({
+        const data = await apiRepository.auth.refreshToken({
           AccessToken: accessToken.value,
           RefreshToken: refreshToken.value
         })
 
-        if (error.value || !data.value || !data.value.AccessToken) {
+        if (!data || !data.AccessToken) {
           throw new Error('Refresh token API failed or returned empty token')
         }
 
         // 換發成功，寫入新的 Token Cookie
-        accessToken.value = data.value.AccessToken
-        if (data.value.RefreshToken) {
-          refreshToken.value = data.value.RefreshToken
+        accessToken.value = data.AccessToken
+        if (data.RefreshToken) {
+          refreshToken.value = data.RefreshToken
         }
       } catch (err) {
         console.error('自動換發 Token 失敗：', err)
