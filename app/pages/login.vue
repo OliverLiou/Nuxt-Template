@@ -2,8 +2,22 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
-// 1. 定義登入表單的欄位結構
-const fields = [
+// 1. 定義頁籤項目
+const loginTabs = [
+  {
+    label: '企業 AD 登入',
+    icon: 'i-lucide-shield-check',
+    slot: 'ad' as const
+  },
+  {
+    label: '一般帳號登入',
+    icon: 'i-lucide-lock',
+    slot: 'general' as const
+  }
+]
+
+// 2. 企業 AD 登入設定
+const adFields = [
   {
     name: 'UserName',
     label: 'AD 帳號',
@@ -22,29 +36,79 @@ const fields = [
   }
 ]
 
-// 2. 定義驗證 Schema
-const schema = z.object({
+const adSchema = z.object({
   UserName: z.string().min(1, '請輸入 AD 帳號'),
   Password: z.string().min(1, '請輸入密碼')
 })
 
-type Schema = z.output<typeof schema>
+type AdSchema = z.output<typeof adSchema>
 
-// 3. 狀態控制與雙向綁定
-const loading = ref(false)
-const errorMessage = ref('')
-const showExpiredModal = useState('show-expired-modal', () => false)
-
-// 透過 Template Ref 取得子組件內部的 reactive state，用以實現按鈕動態啟用/禁用
-const authForm = useTemplateRef('authForm')
-const isSubmitDisabled = computed(() => {
-  const formState = authForm.value?.state as Record<string, any> | undefined
+const adAuthForm = useTemplateRef('adAuthForm')
+const isAdSubmitDisabled = computed(() => {
+  const formState = adAuthForm.value?.state as Record<string, any> | undefined
   if (!formState) return true
   return !formState.UserName?.trim() || !formState.Password?.trim()
 })
 
-// 4. 提交登入
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+// 3. 一般登入設定
+const generalFields = [
+  {
+    name: 'UserName',
+    label: '帳號',
+    type: 'text',
+    placeholder: '請輸入使用者帳號',
+    required: true,
+    defaultValue: ''
+  },
+  {
+    name: 'Password',
+    label: '密碼',
+    type: 'password',
+    placeholder: '請輸入密碼',
+    required: true,
+    defaultValue: ''
+  }
+]
+
+const generalSchema = z.object({
+  UserName: z.string().min(1, '請輸入帳號'),
+  Password: z.string().min(1, '請輸入密碼')
+})
+
+type GeneralSchema = z.output<typeof generalSchema>
+
+const generalAuthForm = useTemplateRef('generalAuthForm')
+const isGeneralSubmitDisabled = computed(() => {
+  const formState = generalAuthForm.value?.state as Record<string, any> | undefined
+  if (!formState) return true
+  return !formState.UserName?.trim() || !formState.Password?.trim()
+})
+
+// 4. 狀態控制與雙向綁定
+const loading = ref(false)
+const errorMessage = ref('')
+const showExpiredModal = useState('show-expired-modal', () => false)
+
+// 5. 共同登入成功處理
+async function handleLoginSuccess(authData: any) {
+  if (authData && authData.AccessToken) {
+    const accessToken = useCookie('access_token')
+    const refreshToken = useCookie('refresh_token')
+
+    // 分開儲存 AccessToken 與 RefreshToken
+    accessToken.value = authData.AccessToken
+    refreshToken.value = authData.RefreshToken || null
+
+    // 登入成功後，重新整理逾期狀態並跳轉首頁
+    showExpiredModal.value = false
+    await navigateTo('/')
+  } else {
+    errorMessage.value = '登入失敗：未取得認證授權 Token'
+  }
+}
+
+// 6. 提交 AD 登入
+async function onAdSubmit(event: FormSubmitEvent<AdSchema>) {
   loading.value = true
   errorMessage.value = ''
   
@@ -59,20 +123,31 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return
     }
 
-    if (data.value && data.value.AccessToken) {
-      const accessToken = useCookie('access_token')
-      const refreshToken = useCookie('refresh_token')
+    await handleLoginSuccess(data.value)
+  } catch (err: any) {
+    errorMessage.value = err.message || '登入過程發生未知異常'
+  } finally {
+    loading.value = false
+  }
+}
 
-      // 分開儲存 AccessToken 與 RefreshToken
-      accessToken.value = data.value.AccessToken
-      refreshToken.value = data.value.RefreshToken || null
+// 7. 提交一般登入
+async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
+  loading.value = true
+  errorMessage.value = ''
+  
+  try {
+    const { data, error } = await apiRepository.auth.login({
+      UserName: event.data.UserName,
+      Password: event.data.Password
+    })
 
-      // 登入成功後，重新整理逾期狀態並跳轉首頁
-      showExpiredModal.value = false
-      await navigateTo('/')
-    } else {
-      errorMessage.value = '登入失敗：未取得認證授權 Token'
+    if (error.value) {
+      errorMessage.value = error.value.data?.message || error.value.message || '登入失敗，請確認帳號與密碼'
+      return
     }
+
+    await handleLoginSuccess(data.value)
   } catch (err: any) {
     errorMessage.value = err.message || '登入過程發生未知異常'
   } finally {
@@ -91,29 +166,59 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       class="w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md transition-all duration-300 hover:shadow-primary-500/5"
       :ui="{ body: 'p-6 sm:p-8' }"
     >
-      <UAuthForm
-        ref="authForm"
-        :fields="fields"
-        :schema="schema"
-        :submit="{ label: '登入系統', disabled: isSubmitDisabled, block: true }"
-        :loading="loading"
-        title="企業 AD 登入"
-        description="請輸入您的企業 Windows AD 帳密以訪問系統"
-        icon="i-lucide-shield-check"
-        @submit="onSubmit"
-      >
-        <!-- 錯誤訊息顯示插槽 -->
-        <template #validation>
-          <UAlert
-            v-if="errorMessage"
-            color="error"
-            variant="soft"
-            :title="errorMessage"
-            icon="i-lucide-alert-circle"
-            class="mt-4 animate-shake"
-          />
+      <UTabs :items="loginTabs" class="w-full" @change="errorMessage = ''">
+        <!-- 企業 AD 登入 Tab -->
+        <template #ad>
+          <UAuthForm
+            ref="adAuthForm"
+            :fields="adFields"
+            :schema="adSchema"
+            :submit="{ label: '登入系統 (AD)', disabled: isAdSubmitDisabled, block: true }"
+            :loading="loading"
+            description="請輸入您的企業 Windows AD 帳密以訪問系統"
+            class="mt-4"
+            @submit="onAdSubmit"
+          >
+            <!-- 錯誤訊息顯示插槽 -->
+            <template #validation>
+              <UAlert
+                v-if="errorMessage"
+                color="error"
+                variant="soft"
+                :title="errorMessage"
+                icon="i-lucide-alert-circle"
+                class="mt-4 animate-shake"
+              />
+            </template>
+          </UAuthForm>
         </template>
-      </UAuthForm>
+
+        <!-- 一般帳號登入 Tab -->
+        <template #general>
+          <UAuthForm
+            ref="generalAuthForm"
+            :fields="generalFields"
+            :schema="generalSchema"
+            :submit="{ label: '登入系統', disabled: isGeneralSubmitDisabled, block: true }"
+            :loading="loading"
+            description="請輸入您的系統帳密以訪問系統"
+            class="mt-4"
+            @submit="onGeneralSubmit"
+          >
+            <!-- 錯誤訊息顯示插槽 -->
+            <template #validation>
+              <UAlert
+                v-if="errorMessage"
+                color="error"
+                variant="soft"
+                :title="errorMessage"
+                icon="i-lucide-alert-circle"
+                class="mt-4 animate-shake"
+              />
+            </template>
+          </UAuthForm>
+        </template>
+      </UTabs>
     </UCard>
 
     <!-- 登入逾期提示 Modal (使用自訂通用 BaseModal) -->

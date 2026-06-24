@@ -22,6 +22,7 @@ export const useUserStore = defineStore('user', () => {
     
     accessToken.value = null
     refreshToken.value = null
+    clearNuxtData();
   }
 
   return {

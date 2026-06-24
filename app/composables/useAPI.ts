@@ -1,11 +1,12 @@
 export const useAPI = createUseFetch((callerOptions) => {
   const config = useRuntimeConfig()
-  const token = useCookie('access_token')
+
 
   return {
     baseURL: config.public.apiBase || '',
     onRequest({ options }) {
       const headers = new Headers(options.headers)
+      const token = useCookie('access_token')
       if (token.value) {
         headers.set('Authorization', `Bearer ${token.value}`)
       }

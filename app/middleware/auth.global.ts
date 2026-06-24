@@ -3,7 +3,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 1. 當路由進入 /login 時，最優先在伺服器端或客戶端清除 Cookie 與重置 Store
   if (to.path === '/login') {
-    userStore.logOut()
+    // userStore.logOut()
     return
   }
 
