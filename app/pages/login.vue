@@ -87,7 +87,6 @@ const isGeneralSubmitDisabled = computed(() => {
 // 4. 狀態控制與雙向綁定
 const loading = ref(false)
 const errorMessage = ref('')
-const showExpiredModal = useState('show-expired-modal', () => false)
 
 // 5. 共同登入成功處理
 async function handleLoginSuccess(authData: any) {
@@ -99,8 +98,9 @@ async function handleLoginSuccess(authData: any) {
     accessToken.value = authData.AccessToken
     refreshToken.value = authData.RefreshToken || null
 
-    // 登入成功後，重新整理逾期狀態並跳轉首頁
-    showExpiredModal.value = false
+    // 登入成功後，關閉全域逾期對話視窗並跳轉首頁
+    const systemStore = useSystemStore()
+    systemStore.isOpen = false
     await navigateTo('/')
   } else {
     errorMessage.value = '登入失敗：未取得認證授權 Token'
@@ -157,7 +157,7 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
 </script>
 
 <template>
-  <div class="flex min-h-dvh items-center justify-center bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 p-6 relative overflow-hidden">
+  <div class="flex min-h-dvh items-center justify-center bg-linear-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 p-6 relative overflow-hidden">
     <!-- 背景光效裝飾，營造高級設計感 -->
     <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
     <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -220,17 +220,6 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
         </template>
       </UTabs>
     </UCard>
-
-    <!-- 登入逾期提示 Modal (使用自訂通用 BaseModal) -->
-    <BaseModal
-      v-model:open="showExpiredModal"
-      mode="alert"
-      title="系統提示"
-      description="您的登入已逾期，請重新登入。"
-      :prevent-close="true"
-      confirm-label="確定"
-      @confirm="showExpiredModal = false"
-    />
   </div>
 </template>
 

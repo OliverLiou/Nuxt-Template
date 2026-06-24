@@ -79,7 +79,7 @@ const navigationItems = computed<NavigationMenuItem[]>(() => {
 })
 
 const userStore = useUserStore()
-const showLogoutModal = ref(false)
+const systemStore = useSystemStore()
 
 function handleLogout() {
   userStore.logOut()
@@ -103,7 +103,14 @@ const userMenuItems = [
       icon: 'i-lucide-log-out',
       color: 'error' as const,
       onSelect: () => {
-        showLogoutModal.value = true
+        systemStore.openModal({
+          mode: 'confirm',
+          title: '登出確認',
+          description: '您確定要登出系統嗎？',
+          onConfirm: () => {
+            handleLogout()
+          }
+        })
       }
     }
   ]
@@ -180,12 +187,4 @@ const userMenuItems = [
       </template>
     </UDashboardPanel>
   </UDashboardGroup>
-
-  <BaseModal
-    v-model:open="showLogoutModal"
-    mode="confirm"
-    title="登出確認"
-    description="您確定要登出系統嗎？"
-    @confirm="handleLogout"
-  />
 </template>

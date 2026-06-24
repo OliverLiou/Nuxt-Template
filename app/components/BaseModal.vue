@@ -59,6 +59,10 @@ function handleCancel() {
     :title="title"
     :description="description"
     :prevent-close="preventClose"
+    :ui="{
+      overlay: 'z-100',
+      content: 'z-100'
+    }"
   >
     <!-- 若有傳入預設插槽內容，則顯示於對話視窗 Body 區域 -->
     <template v-if="$slots.default" #body>

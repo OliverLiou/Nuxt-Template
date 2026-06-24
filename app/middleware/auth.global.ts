@@ -1,5 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const userStore = useUserStore()
+  const systemStore = useSystemStore()
 
   // 1. 當路由進入 /login 時，最優先在伺服器端或客戶端清除 Cookie 與重置 Store
   if (to.path === '/login') {
@@ -37,13 +38,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
       } catch (err) {
         console.error('自動換發 Token 失敗：', err)
         userStore.logOut() // 清除 Token 與狀態
-        useState('show-expired-modal').value = true // 開啟逾期 Modal
+        systemStore.openModal({
+          title: '系統提示',
+          description: '您的登入已逾期，請重新登入。',
+          preventClose: true
+        })
         return navigateTo('/login')
       }
     } else {
       // Token 已過期且無 refresh_token，直接登出並顯示逾期 Modal
       userStore.logOut()
-      useState('show-expired-modal').value = true
+      systemStore.openModal({
+        title: '系統提示',
+        description: '您的登入已逾期，請重新登入。',
+        preventClose: true
+      })
       return navigateTo('/login')
     }
   }
@@ -63,7 +72,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     } catch (err) {
       console.error('取得使用者資料失敗，將強制登出並轉至登入頁：', err)
       userStore.logOut()
-      useState('show-expired-modal').value = true
+      systemStore.openModal({
+        title: '系統提示',
+        description: '您的登入已逾期，請重新登入。',
+        preventClose: true
+      })
       return navigateTo('/login')
     }
   }
