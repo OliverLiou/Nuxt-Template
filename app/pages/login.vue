@@ -2,6 +2,14 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
+const activeTab = ref('1');
+watch(activeTab, (newValue) => {
+  // 切換頁籤時，清除錯誤訊息
+  if (errorMessage.value) {
+    errorMessage.value = ''
+  }
+})
+
 // 1. 定義頁籤項目
 const loginTabs = [
   {
@@ -120,7 +128,7 @@ async function onAdSubmit(event: FormSubmitEvent<AdSchema>) {
 
     await handleLoginSuccess(data)
   } catch (err: any) {
-    errorMessage.value = err.data?.message || err.message || '登入失敗，請確認帳號與密碼'
+    errorMessage.value = err.data?.Message || '登入失敗，請確認帳號與密碼'
   } finally {
     loading.value = false
   }
@@ -139,7 +147,7 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
 
     await handleLoginSuccess(data)
   } catch (err: any) {
-    errorMessage.value = err.data?.message || err.message || '登入失敗，請確認帳號與密碼'
+    errorMessage.value = err.data?.Message || '登入失敗，請確認帳號與密碼'
   } finally {
     loading.value = false
   }
@@ -156,7 +164,7 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
       class="w-full max-w-md shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md transition-all duration-300 hover:shadow-primary-500/5"
       :ui="{ body: 'p-6 sm:p-8' }"
     >
-      <UTabs :items="loginTabs" class="w-full" @change="errorMessage = ''">
+      <UTabs v-model="activeTab" :items="loginTabs" class="w-full" @change="errorMessage = ''">
         <!-- 企業 AD 登入 Tab -->
         <template #ad>
           <UAuthForm

@@ -21,7 +21,7 @@ export const getSharedFetchOptions = () => {
     onResponseError({ response }: { response: any }) {
       console.error(`[API Response Error] 狀態碼 ${response.status}:`, response._data)
       
-      const errorMessage = response._data?.message || '系統發生未知錯誤，請聯絡管理員'
+      const errorMessage = response._data?.Message || '系統發生未知錯誤'
       
       // 使用 useSystemStore 呼叫全域 BaseModal 對話視窗顯示錯誤
       const systemStore = useSystemStore()
