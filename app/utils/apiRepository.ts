@@ -13,19 +13,19 @@ export enum HttpMethod {
 }
 
 // ============================================================================
-// 1. 認證相關型別 (Auth Types)
+// 1. 認證與使用者相關型別 (Auth & User Types)
 // ============================================================================
 
 /** 一般登入請求物件 */
 export interface LoginRequest {
-  UserName?: string | null
-  Password?: string | null
+  UserName: string
+  Password: string
 }
 
 /** AD 登入請求物件 */
 export interface AdLoginRequest {
   UserName: string
-  Password?: string
+  Password: string
 }
 
 /** 登入與換發 Token 回應物件 */
@@ -48,6 +48,19 @@ export interface UserInfoDto {
   Email?: string | null
   Picture?: string | null
   RoleNames?: string[] | null
+}
+
+/** 更新使用者基本資料的請求 DTO */
+export interface UpdateUserRequest {
+  EmployeeName?: string | null
+  Email?: string | null
+  PhoneNumber?: string | null
+  IsActive?: boolean
+}
+
+/** 更新使用者角色權限的請求 DTO */
+export interface UpdateUserRolesRequest {
+  Roles?: string[] | null
 }
 
 // ============================================================================
@@ -74,12 +87,10 @@ export interface Table1ResponsePagedResult {
 
 /** 使用者回應物件 */
 export interface UserResponse {
-  Id?: string | null
   UserName?: string | null
   EmployeeName?: string | null
   Email?: string | null
-  Picture?: string | null
-  RoleNames?: string[] | null
+  LastLoginAt?: string | null
 }
 
 /** 使用者分頁查詢結果包裝物件 */
@@ -188,8 +199,11 @@ export const apiRepository = {
         query: querySearch ? { querySearch } : undefined,
         ...options,
       })
-    },
+    }
+  },
 
+  /** 使用者管理相關端點 */
+  user: {
     /** 分頁查詢使用者資料 */
     findUsers(
       currentPage: number,
@@ -197,11 +211,30 @@ export const apiRepository = {
       querySearch?: string,
       options?: UseFetchOptions<UserResponsePagedResult>
     ) {
-      return useAPI<UserResponsePagedResult>(`/Data/FindUsers/${currentPage}/${pageSize}`, {
+      return useAPI<UserResponsePagedResult>(`/User/FindUsers/${currentPage}/${pageSize}`, {
         method: HttpMethod.GET,
         query: querySearch ? { querySearch } : undefined,
+        ...options,
+      })
+    },
+
+    /** 更新使用者基本資料 */
+    updateUser(userId: string, body: UpdateUserRequest, options?: any) {
+      return $api<any>(`/User/UpdateUser/${userId}`, {
+        method: HttpMethod.PUT,
+        body,
+        ...options,
+      })
+    },
+
+    /** 更新使用者角色權限 (僅限 Admin) */
+    updateUserRoles(userId: string, body: UpdateUserRolesRequest, options?: any) {
+      return $api<any>(`/User/UpdateUserRoles/${userId}`, {
+        method: HttpMethod.PUT,
+        body,
         ...options,
       })
     }
   }
 }
+
