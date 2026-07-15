@@ -80,6 +80,7 @@ const navigationItems = computed<NavigationMenuItem[]>(() => {
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const isUserProfileOpen = ref(false)
 
 function handleLogout() {
   userStore.logOut()
@@ -93,7 +94,7 @@ const userMenuItems = [
       label: '個人資訊',
       icon: 'i-lucide-user',
       onSelect: () => {
-        // alert('點擊了個人資訊')
+        isUserProfileOpen.value = true
       }
     }
   ],
@@ -187,4 +188,9 @@ const userMenuItems = [
       </template>
     </UDashboardPanel>
   </UDashboardGroup>
+
+  <UserEditModal
+    v-model:open="isUserProfileOpen"
+    mode="personal"
+  />
 </template>

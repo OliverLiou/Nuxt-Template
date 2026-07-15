@@ -61,14 +61,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 若 Store 中尚無使用者資訊，則自動向後端拉取並儲存
   if (!userStore.user) {
     try {
-      const { data, error } = await apiRepository.auth.getUserProfile()
+      const data = await apiRepository.auth.getUserProfile()
       
-      if (error.value || !data.value) {
+      if (!data) {
         throw new Error('Fetch user profile API failed or returned empty data')
       }
 
       // 儲存至 Pinia Store
-      userStore.setUser(data.value)
+      userStore.setUser(data)
     } catch (err) {
       console.error('取得使用者資料失敗，將強制登出並轉至登入頁：', err)
       userStore.logOut()

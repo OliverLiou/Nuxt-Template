@@ -46,21 +46,19 @@ export interface UserInfoDto {
   UserName?: string | null
   EmployeeName?: string | null
   Email?: string | null
+  PhoneNumber?: string | null
   Picture?: string | null
   RoleNames?: string[] | null
+  IsActive?: boolean
 }
 
-/** 更新使用者基本資料的請求 DTO */
+/** 更新使用者資料的請求 DTO */
 export interface UpdateUserRequest {
   EmployeeName?: string | null
   Email?: string | null
   PhoneNumber?: string | null
   IsActive?: boolean
-}
-
-/** 更新使用者角色權限的請求 DTO */
-export interface UpdateUserRolesRequest {
-  Roles?: string[] | null
+  RoleNames?: string[] | null
 }
 
 // ============================================================================
@@ -125,8 +123,8 @@ export const apiRepository = {
     },
 
     /** 取得使用者個人資料，包含姓名、Email、角色等資訊 */
-    getUserProfile(options?: UseFetchOptions<UserInfoDto>) {
-      return useAPI<UserInfoDto>('/Auth/UserProfile', {
+    getUserProfile(options?: any) {
+      return $api<UserInfoDto>('/Auth/UserProfile', {
         method: HttpMethod.GET,
         ...options,
       })
@@ -218,18 +216,9 @@ export const apiRepository = {
       })
     },
 
-    /** 更新使用者基本資料 */
+    /** 更新使用者資料 */
     updateUser(userId: string, body: UpdateUserRequest, options?: any) {
       return $api<any>(`/User/UpdateUser/${userId}`, {
-        method: HttpMethod.PUT,
-        body,
-        ...options,
-      })
-    },
-
-    /** 更新使用者角色權限 (僅限 Admin) */
-    updateUserRoles(userId: string, body: UpdateUserRolesRequest, options?: any) {
-      return $api<any>(`/User/UpdateUserRoles/${userId}`, {
         method: HttpMethod.PUT,
         body,
         ...options,
@@ -237,4 +226,3 @@ export const apiRepository = {
     }
   }
 }
-
