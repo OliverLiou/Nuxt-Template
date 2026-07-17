@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UpdateUserRequest, UserInfoDto } from '~/utils/apiRepository'
+import type { UpdateUserRequest, UserInfoDto } from '~/utils/apiEndpoints'
 import {
   adminUserUpdateSchema,
   personalUserUpdateSchema,
@@ -24,7 +24,9 @@ const emit = defineEmits<{
 
 const isOpen = defineModel<boolean>('open', { default: false })
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const toast = useToast()
+const { $api } = useNuxtApp()
 const form = useTemplateRef('form')
 const formId = `user-edit-form-${useId()}`
 const isSubmitting = ref(false)
@@ -142,9 +144,17 @@ async function onSubmit() {
   isSubmitting.value = true
 
   try {
-    await apiRepository.user.updateUser(userId, createUpdateRequest())
+    const updateRequest = apiEndpoints.user.updateUser(
+      userId,
+      createUpdateRequest()
+    )
+    await $api<unknown>(updateRequest.path, updateRequest.options)
 
-    const currentUser = await apiRepository.auth.getUserProfile()
+    const profileRequest = apiEndpoints.auth.getUserProfile()
+    const currentUser = await $api<UserInfoDto>(
+      profileRequest.path,
+      profileRequest.options
+    )
     userStore.setUser(currentUser)
 
     emit('updated', userId)
@@ -157,6 +167,26 @@ async function onSubmit() {
     isOpen.value = false
   } catch (error) {
     console.error('更新使用者資料失敗：', error)
+
+    const apiError = normalizeApiError(error)
+
+    if (apiError.statusCode === 401) {
+      userStore.logOut()
+      systemStore.openModal({
+        title: '系統提示',
+        description: '您的登入已逾期，請重新登入。',
+        preventClose: true
+      })
+      await navigateTo('/login')
+      return
+    }
+
+    toast.add({
+      title: '更新失敗',
+      description: apiError.message,
+      color: 'error',
+      icon: 'i-lucide-circle-x'
+    })
   } finally {
     isSubmitting.value = false
   }

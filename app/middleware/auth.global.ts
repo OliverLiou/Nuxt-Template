@@ -1,6 +1,9 @@
+import type { AuthResponse, UserInfoDto } from '~/utils/apiEndpoints'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const userStore = useUserStore()
   const systemStore = useSystemStore()
+  const { $api } = useNuxtApp()
 
   // 1. 當路由進入 /login 時，最優先在伺服器端或客戶端清除 Cookie 與重置 Store
   if (to.path === '/login') {
@@ -21,10 +24,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (refreshToken.value) {
       try {
         // 向後端換發 Token
-        const data = await apiRepository.auth.refreshToken({
+        const request = apiEndpoints.auth.refreshToken({
           AccessToken: accessToken.value,
           RefreshToken: refreshToken.value
         })
+        const data = await $api<AuthResponse>(request.path, request.options)
 
         if (!data || !data.AccessToken) {
           throw new Error('Refresh token API failed or returned empty token')
@@ -61,7 +65,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 若 Store 中尚無使用者資訊，則自動向後端拉取並儲存
   if (!userStore.user) {
     try {
-      const data = await apiRepository.auth.getUserProfile()
+      const request = apiEndpoints.auth.getUserProfile()
+      const data = await $api<UserInfoDto>(request.path, request.options)
       
       if (!data) {
         throw new Error('Fetch user profile API failed or returned empty data')

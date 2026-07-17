@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import type { AuthResponse } from '~/utils/apiEndpoints'
 
 const activeTab = ref('1');
 watch(activeTab, (newValue) => {
@@ -95,9 +96,10 @@ const isGeneralSubmitDisabled = computed(() => {
 // 4. 狀態控制與雙向綁定
 const loading = ref(false)
 const errorMessage = ref('')
+const { $api } = useNuxtApp()
 
 // 5. 共同登入成功處理
-async function handleLoginSuccess(authData: any) {
+async function handleLoginSuccess(authData: AuthResponse) {
   if (authData && authData.AccessToken) {
     const accessToken = useCookie('access_token')
     const refreshToken = useCookie('refresh_token')
@@ -121,14 +123,18 @@ async function onAdSubmit(event: FormSubmitEvent<AdSchema>) {
   errorMessage.value = ''
   
   try {
-    const data = await apiRepository.auth.adLogin({
+    const request = apiEndpoints.auth.adLogin({
       UserName: event.data.UserName,
       Password: event.data.Password
     })
+    const data = await $api<AuthResponse>(request.path, request.options)
 
     await handleLoginSuccess(data)
-  } catch (err: any) {
-    errorMessage.value = err.data?.Message || '登入失敗，請確認帳號與密碼'
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '登入失敗，請確認帳號與密碼'
+    )
   } finally {
     loading.value = false
   }
@@ -140,14 +146,18 @@ async function onGeneralSubmit(event: FormSubmitEvent<GeneralSchema>) {
   errorMessage.value = ''
   
   try {
-    const data = await apiRepository.auth.login({
+    const request = apiEndpoints.auth.login({
       UserName: event.data.UserName,
       Password: event.data.Password
     })
+    const data = await $api<AuthResponse>(request.path, request.options)
 
     await handleLoginSuccess(data)
-  } catch (err: any) {
-    errorMessage.value = err.data?.Message || '登入失敗，請確認帳號與密碼'
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '登入失敗，請確認帳號與密碼'
+    )
   } finally {
     loading.value = false
   }

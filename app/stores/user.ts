@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { UserInfoDto } from '../utils/apiRepository'
+import type { UserInfoDto } from '../utils/apiEndpoints'
 
 export const useUserStore = defineStore('user', () => {
   // 存放當前使用者詳細資訊 (不啟用 persistedstate 持久化，防範 SSR 水合問題)

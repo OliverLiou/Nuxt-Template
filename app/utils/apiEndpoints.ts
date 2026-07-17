@@ -1,5 +1,3 @@
-import type { UseFetchOptions } from '#app'
-
 // ============================================================================
 // 0. HTTP 方法列舉 (HTTP Methods Enum)
 // ============================================================================
@@ -98,105 +96,124 @@ export interface UserResponsePagedResult {
 }
 
 // ============================================================================
-// 3. API Repository 實作
+// 3. API Endpoint Catalog
 // ============================================================================
 
-export const apiRepository = {
+export const apiEndpoints = {
   /** 認證與使用者相關端點 */
   auth: {
     /** 一般登入，驗證成功後會回傳 JWT access token 和 refresh token */
-    login(body: LoginRequest, options?: any) {
-      return $api<AuthResponse>('/Auth/Login', {
-        method: HttpMethod.POST,
-        body,
-        ...options,
-      })
+    login(body: LoginRequest) {
+      return {
+        path: '/Auth/Login',
+        options: {
+          method: HttpMethod.POST,
+          body
+        }
+      }
     },
 
     /** AD 登入，驗證成功後會自動建立使用者資料，並回傳 JWT AccessToken 和 RefreshToken */
-    adLogin(body: AdLoginRequest, options?: any) {
-      return $api<AuthResponse>('/Auth/AdLogin', {
-        method: HttpMethod.POST,
-        body,
-        ...options,
-      })
+    adLogin(body: AdLoginRequest) {
+      return {
+        path: '/Auth/AdLogin',
+        options: {
+          method: HttpMethod.POST,
+          body
+        }
+      }
     },
 
     /** 取得使用者個人資料，包含姓名、Email、角色等資訊 */
-    getUserProfile(options?: any) {
-      return $api<UserInfoDto>('/Auth/UserProfile', {
-        method: HttpMethod.GET,
-        ...options,
-      })
+    getUserProfile() {
+      return {
+        path: '/Auth/UserProfile',
+        options: {
+          method: HttpMethod.GET
+        }
+      }
     },
 
     /** 使用 Refresh Token 換發新的 Access Token */
-    refreshToken(body: RefreshTokenRequest, options?: any) {
-      return $api<AuthResponse>('/Auth/RefreshToken', {
-        method: HttpMethod.POST,
-        body,
-        ...options,
-      })
+    refreshToken(body: RefreshTokenRequest) {
+      return {
+        path: '/Auth/RefreshToken',
+        options: {
+          method: HttpMethod.POST,
+          body
+        }
+      }
     }
   },
 
   /** 業務資料處理相關端點 */
   data: {
     /** 取得指定的 Table1 資料 */
-    getTable1(table1Id: number, options?: UseFetchOptions<any>) {
-      return useAPI<any>(`/Data/GetTable1/${table1Id}`, {
-        method: HttpMethod.GET,
-        ...options,
-      })
+    getTable1(table1Id: number) {
+      return {
+        path: `/Data/GetTable1/${table1Id}`,
+        options: {
+          method: HttpMethod.GET
+        }
+      }
     },
 
     /** 儲存單筆 Table1 資料 */
-    table1SingleSave(body: Table1Request, options?: any) {
-      return $api<any>('/Data/Table1SingleSave', {
-        method: HttpMethod.POST,
-        body,
-        ...options,
-      })
+    table1SingleSave(body: Table1Request) {
+      return {
+        path: '/Data/Table1SingleSave',
+        options: {
+          method: HttpMethod.POST,
+          body
+        }
+      }
     },
 
     /** 儲存多筆 Table1 資料 */
-    table1MultipleSave(body: Table1Request[], options?: any) {
-      return $api<any>('/Data/Table1MutipleSave', {
-        method: HttpMethod.POST,
-        body,
-        ...options,
-      })
+    table1MultipleSave(body: Table1Request[]) {
+      return {
+        path: '/Data/Table1MutipleSave',
+        options: {
+          method: HttpMethod.POST,
+          body
+        }
+      }
     },
 
     /** 刪除指定的 Table1 資料 */
-    deleteTable1Data(table1Id: number, options?: any) {
-      return $api<any>('/Data/DeleteTable1Data', {
-        method: HttpMethod.DELETE,
-        query: { table1Id },
-        ...options,
-      })
+    deleteTable1Data(table1Id: number) {
+      return {
+        path: '/Data/DeleteTable1Data',
+        options: {
+          method: HttpMethod.DELETE,
+          query: { table1Id }
+        }
+      }
     },
 
     /** 取得所有 Table1 資料 */
-    getTable1s(options?: UseFetchOptions<Table1Response[]>) {
-      return useAPI<Table1Response[]>('/Data/GetTable1s', {
-        method: HttpMethod.GET,
-        ...options,
-      })
+    getTable1s() {
+      return {
+        path: '/Data/GetTable1s',
+        options: {
+          method: HttpMethod.GET
+        }
+      }
     },
 
     /** 分頁查詢 Table1 資料 */
     findTable1(
       currentPage: number,
       pageSize: number,
-      querySearch?: string,
-      options?: UseFetchOptions<Table1ResponsePagedResult>
+      querySearch?: string
     ) {
-      return useAPI<Table1ResponsePagedResult>(`/Data/FindTable1/${currentPage}/${pageSize}`, {
-        method: HttpMethod.GET,
-        query: querySearch ? { querySearch } : undefined,
-        ...options,
-      })
+      return {
+        path: `/Data/FindTable1/${currentPage}/${pageSize}`,
+        options: {
+          method: HttpMethod.GET,
+          query: querySearch ? { querySearch } : undefined
+        }
+      }
     }
   },
 
@@ -206,23 +223,26 @@ export const apiRepository = {
     findUsers(
       currentPage: number,
       pageSize: number,
-      querySearch?: string,
-      options?: UseFetchOptions<UserResponsePagedResult>
+      querySearch?: string
     ) {
-      return useAPI<UserResponsePagedResult>(`/User/FindUsers/${currentPage}/${pageSize}`, {
-        method: HttpMethod.GET,
-        query: querySearch ? { querySearch } : undefined,
-        ...options,
-      })
+      return {
+        path: `/User/FindUsers/${currentPage}/${pageSize}`,
+        options: {
+          method: HttpMethod.GET,
+          query: querySearch ? { querySearch } : undefined
+        }
+      }
     },
 
     /** 更新使用者資料 */
-    updateUser(userId: string, body: UpdateUserRequest, options?: any) {
-      return $api<any>(`/User/UpdateUser/${userId}`, {
-        method: HttpMethod.PUT,
-        body,
-        ...options,
-      })
+    updateUser(userId: string, body: UpdateUserRequest) {
+      return {
+        path: `/User/UpdateUser/${userId}`,
+        options: {
+          method: HttpMethod.PUT,
+          body
+        }
+      }
     }
   }
 }
