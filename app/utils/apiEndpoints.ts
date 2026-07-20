@@ -45,7 +45,7 @@ export interface UserInfoDto {
   EmployeeName?: string | null
   Email?: string | null
   PhoneNumber?: string | null
-  Picture?: string | null
+  AvatarUrl?: string | null
   RoleNames?: string[] | null
   IsActive?: boolean
 }
@@ -241,6 +241,19 @@ export const apiEndpoints = {
         options: {
           method: HttpMethod.PUT,
           body
+        }
+      }
+    },
+
+    /** 上傳使用者大頭貼 (multipart/form-data)，回傳新的相對路徑 */
+    uploadAvatar(userId: string, file: File) {
+      const formData = new FormData()
+      formData.append('file', file)
+      return {
+        path: `/User/UploadAvatar/${userId}`,
+        options: {
+          method: HttpMethod.POST,
+          body: formData
         }
       }
     }

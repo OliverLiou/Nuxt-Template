@@ -82,6 +82,8 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const isUserProfileOpen = ref(false)
 
+const avatarSrc = computed(() => userStore.user?.AvatarUrl || undefined)
+
 function handleLogout() {
   userStore.logOut()
   navigateTo('/login')
@@ -156,7 +158,7 @@ const userMenuItems = [
         >
           <UButton
             :avatar="{
-              src: userStore.user?.Picture || undefined,
+              src: avatarSrc,
               icon: 'i-lucide-user',
               size: 'sm'
             }"

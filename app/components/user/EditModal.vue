@@ -32,13 +32,19 @@ const formId = `user-edit-form-${useId()}`
 const isSubmitting = ref(false)
 const initialSnapshot = ref('')
 
-const state = reactive<AdminUserUpdateForm>({
+const state = reactive<AdminUserUpdateForm & { AvatarUrl: string | null }>({
   EmployeeName: '',
   Email: '',
   PhoneNumber: '',
   IsActive: true,
-  RoleNames: []
+  RoleNames: [],
+  AvatarUrl: null
 })
+
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
+const ALLOWED_AVATAR_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']
+const isUploadingAvatar = ref(false)
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 
 const schema = computed(() => (
   props.mode === 'admin'
@@ -87,7 +93,8 @@ function createSnapshot() {
   const personalFields = {
     EmployeeName: state.EmployeeName.trim(),
     Email: state.Email.trim(),
-    PhoneNumber: state.PhoneNumber.trim()
+    PhoneNumber: state.PhoneNumber.trim(),
+    AvatarUrl: state.AvatarUrl
   }
 
   if (props.mode === 'personal') {
@@ -109,8 +116,97 @@ function initializeForm() {
   state.PhoneNumber = user?.PhoneNumber ?? ''
   state.IsActive = user?.IsActive ?? true
   state.RoleNames = [...(user?.RoleNames ?? [])]
+  state.AvatarUrl = user?.AvatarUrl ?? null
   initialSnapshot.value = createSnapshot()
   form.value?.clear()
+}
+
+async function handleAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  input.value = ''
+
+  if (!file) return
+
+  if (file.size > MAX_AVATAR_SIZE) {
+    toast.add({
+      title: '檔案過大',
+      description: `大頭貼檔案大小不得超過 ${MAX_AVATAR_SIZE / 1024 / 1024} MB。`,
+      color: 'error',
+      icon: 'i-lucide-circle-x'
+    })
+    return
+  }
+
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (!ALLOWED_AVATAR_EXTENSIONS.includes(ext)) {
+    toast.add({
+      title: '不支援的檔案格式',
+      description: `僅支援 ${ALLOWED_AVATAR_EXTENSIONS.join(', ')} 格式。`,
+      color: 'error',
+      icon: 'i-lucide-circle-x'
+    })
+    return
+  }
+
+  const userId = sourceUser.value?.Id
+  if (!userId) return
+
+  isUploadingAvatar.value = true
+
+  try {
+    const uploadRequest = apiEndpoints.user.uploadAvatar(userId, file)
+    await $api<{ AvatarUrl: string }>(
+      uploadRequest.path,
+      uploadRequest.options
+    )
+
+    if (props.mode === 'personal') {
+      // personal 模式：重新呼叫 UserProfile 取得後端已組好的完整 AvatarUrl
+      const profileRequest = apiEndpoints.auth.getUserProfile()
+      const refreshedUser = await $api<UserInfoDto>(
+        profileRequest.path,
+        profileRequest.options
+      )
+      state.AvatarUrl = refreshedUser.AvatarUrl ?? null
+      userStore.setUser(refreshedUser)
+    } else {
+      // admin 模式：被編輯者非自己，UserProfile 取不到；交由父元件透過 updated 事件重新載入
+      emit('updated', userId)
+    }
+
+    toast.add({
+      title: '大頭貼已更新',
+      description: '大頭貼已成功上傳並轉換為 WebP 格式。',
+      color: 'success',
+      icon: 'i-lucide-circle-check'
+    })
+  } catch (error) {
+    console.error('上傳大頭貼失敗：', error)
+
+    const apiError = normalizeApiError(error)
+
+    if (apiError.statusCode === 401) {
+      userStore.logOut()
+      systemStore.openModal({
+        title: '系統提示',
+        description: '您的登入已逾期，請重新登入。',
+        preventClose: true
+      })
+      await navigateTo('/login')
+      return
+    }
+
+    toast.add({
+      title: '上傳失敗',
+      description: apiError.message,
+      color: 'error',
+      icon: 'i-lucide-circle-x'
+    })
+  } finally {
+    isUploadingAvatar.value = false
+  }
 }
 
 function closeModal() {
@@ -205,6 +301,7 @@ watch(
 
 <template>
   <UModal
+    scrollable
     v-model:open="isOpen"
     :close="false"
     :dismissible="!isSubmitting"
@@ -241,25 +338,64 @@ watch(
           ref="form"
           :schema="schema"
           :state="state"
-          class="space-y-4"
+          class="space-y-5"
           @submit="onSubmit"
         >
-          <UFormField name="EmployeeName" label="員工姓名" required>
+          <!-- 大頭貼預覽與上傳 -->
+          <div class="flex flex-col items-center gap-3 rounded-2xl bg-elevated/50 p-5">
+            <UAvatar
+              :src="state.AvatarUrl || undefined"
+              :alt="state.EmployeeName || '使用者'"
+              icon="i-lucide-user"
+              size="3xl"
+              :ui="{ root: 'ring-2 ring-default ring-offset-2 ring-offset-elevated' }"
+            />
+
+            <div class="flex flex-col items-center gap-1">
+              <UButton
+                icon="i-lucide-upload"
+                size="xs"
+                color="neutral"
+                variant="outline"
+                label="選擇大頭貼"
+                :loading="isUploadingAvatar"
+                :disabled="isSubmitting || isUploadingAvatar"
+                class="rounded-xl"
+                @click="fileInput?.click()"
+              />
+
+              <p class="text-xs text-muted">
+                支援 JPG / PNG / WebP，檔案大小 ≤ 2MB
+              </p>
+            </div>
+
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden"
+              @change="handleAvatarChange"
+            >
+          </div>
+
+          <UFormField name="EmployeeName" label="員工姓名" required class="rounded-xl">
             <UInput
               v-model="state.EmployeeName"
               class="w-full"
               autocomplete="name"
               placeholder="請輸入員工姓名"
+              :ui="{ base: 'rounded-xl' }"
             />
           </UFormField>
 
-          <UFormField name="Email" label="Email" required>
+          <UFormField name="Email" label="Email" required class="rounded-xl">
             <UInput
               v-model="state.Email"
               class="w-full"
               type="email"
               autocomplete="email"
               placeholder="name@example.com"
+              :ui="{ base: 'rounded-xl' }"
             />
           </UFormField>
 
@@ -267,6 +403,7 @@ watch(
             name="PhoneNumber"
             label="電話"
             hint="選填"
+            class="rounded-xl"
           >
             <UInput
               v-model="state.PhoneNumber"
@@ -274,6 +411,7 @@ watch(
               type="tel"
               autocomplete="tel"
               placeholder="請輸入電話號碼"
+              :ui="{ base: 'rounded-xl' }"
             />
           </UFormField>
 
@@ -282,6 +420,7 @@ watch(
               name="IsActive"
               label="帳號狀態"
               description="停用後，使用者將無法繼續使用系統。"
+              class="rounded-xl"
             >
               <USwitch
                 v-model="state.IsActive"
@@ -293,6 +432,7 @@ watch(
               name="RoleNames"
               label="角色"
               description="可為使用者指派一個或多個角色。"
+              class="rounded-xl"
             >
               <USelectMenu
                 v-model="state.RoleNames"
@@ -301,6 +441,7 @@ watch(
                 class="w-full"
                 placeholder="請選擇角色"
                 :search-input="{ placeholder: '搜尋角色...' }"
+                :ui="{ base: 'rounded-xl' }"
               />
             </UFormField>
           </template>
