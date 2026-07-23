@@ -46,8 +46,10 @@ export interface UserInfoDto {
   Email?: string | null
   PhoneNumber?: string | null
   AvatarUrl?: string | null
-  RoleNames?: string[] | null
   IsActive?: boolean
+  CreatedAt: string | null
+  LastLoginAt?: string | null
+  RoleNames?: string[] | null
 }
 
 /** 更新使用者資料的請求 DTO */
@@ -95,12 +97,18 @@ export interface UserResponsePagedResult {
   TotalCount?: number
 }
 
+/** 角色回應物件 */
+export interface RoleResponse {
+  Id?: string | null
+  RoleDesc?: string | null
+}
+
 // ============================================================================
 // 3. API Endpoint Catalog
 // ============================================================================
 
 export const apiEndpoints = {
-  /** 認證與使用者相關端點 */
+  /** 認證相關端點 */
   auth: {
     /** 一般登入，驗證成功後會回傳 JWT access token 和 refresh token */
     login(body: LoginRequest) {
@@ -120,16 +128,6 @@ export const apiEndpoints = {
         options: {
           method: HttpMethod.POST,
           body
-        }
-      }
-    },
-
-    /** 取得使用者個人資料，包含姓名、Email、角色等資訊 */
-    getUserProfile() {
-      return {
-        path: '/Auth/UserProfile',
-        options: {
-          method: HttpMethod.GET
         }
       }
     },
@@ -219,6 +217,16 @@ export const apiEndpoints = {
 
   /** 使用者管理相關端點 */
   user: {
+    /** 取得使用者個人資料，包含姓名、Email、角色等資訊 */
+    getUserProfile() {
+      return {
+        path: '/User/UserProfile',
+        options: {
+          method: HttpMethod.GET
+        }
+      }
+    },
+    
     /** 分頁查詢使用者資料 */
     findUsers(
       currentPage: number,
@@ -254,6 +262,16 @@ export const apiEndpoints = {
         options: {
           method: HttpMethod.POST,
           body: formData
+        }
+      }
+    },
+
+    /** 取得所有角色資料 */
+    getRoles() {
+      return {
+        path: `/User/GetRoles`,
+        options: {
+          method: HttpMethod.GET
         }
       }
     }

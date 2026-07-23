@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { UserResponse, UserResponsePagedResult } from '~/utils/apiEndpoints'
+import type { UserInfoDto, UserResponsePagedResult } from '~/utils/apiEndpoints'
 
 definePageMeta({
   parentId: 'system-settings', // 指定父節點為虛擬節點 "系統設定"
@@ -10,19 +10,19 @@ definePageMeta({
   order: 1
 })
 
-type UserTableRow = UserResponse & {
-  AvatarUrl?: string | null
-  PhoneNumber?: string | null
-  RoleNames?: string[] | null
-  IsActive?: boolean
-  CreatedAt?: string | null
-}
+// type UserTableRow = UserResponse & {
+//   AvatarUrl?: string | null
+//   PhoneNumber?: string | null
+//   RoleNames?: string[] | null
+//   IsActive?: boolean
+//   CreatedAt?: string | null
+// }
 
 const toast = useToast()
 const keyword = ref('')
 const submittedKeyword = ref('')
 
-const mockUsers: UserTableRow[] = [
+const mockUsers: UserInfoDto[] = [
   {
     UserName: 'admin',
     EmployeeName: 'System Admin',
@@ -63,7 +63,7 @@ const mockResult = {
   TotalCount: mockUsers.length
 } satisfies UserResponsePagedResult
 
-const columns: TableColumn<UserTableRow>[] = [
+const columns: TableColumn<UserInfoDto>[] = [
   { id: 'person', accessorKey: 'EmployeeName', header: '人員' },
   { id: 'email', accessorKey: 'Email', header: 'Email' },
   { id: 'phone', accessorKey: 'PhoneNumber', header: '電話號碼' },
@@ -101,7 +101,7 @@ function handleAddUser() {
   })
 }
 
-function handleEditUser(user: UserTableRow) {
+function handleEditUser(user: UserInfoDto) {
   toast.add({
     title: '編輯使用者',
     description: `已選取 ${user.EmployeeName || user.UserName || '使用者'}。`,
