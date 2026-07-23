@@ -164,7 +164,7 @@ async function handleAvatarChange(event: Event) {
 
     if (props.mode === 'personal') {
       // personal 模式：重新呼叫 UserProfile 取得後端已組好的完整 AvatarUrl
-      const profileRequest = apiEndpoints.auth.getUserProfile()
+      const profileRequest = apiEndpoints.user.getUserProfile()
       const refreshedUser = await $api<UserInfoDto>(
         profileRequest.path,
         profileRequest.options
@@ -246,7 +246,7 @@ async function onSubmit() {
     )
     await $api<unknown>(updateRequest.path, updateRequest.options)
 
-    const profileRequest = apiEndpoints.auth.getUserProfile()
+    const profileRequest = apiEndpoints.user.getUserProfile()
     const currentUser = await $api<UserInfoDto>(
       profileRequest.path,
       profileRequest.options

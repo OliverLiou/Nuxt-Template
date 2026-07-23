@@ -84,12 +84,7 @@ export interface Table1ResponsePagedResult {
 }
 
 /** 使用者回應物件 */
-export interface UserResponse {
-  UserName?: string | null
-  EmployeeName?: string | null
-  Email?: string | null
-  LastLoginAt?: string | null
-}
+export type UserResponse = UserInfoDto
 
 /** 使用者分頁查詢結果包裝物件 */
 export interface UserResponsePagedResult {

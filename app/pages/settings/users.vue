@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { useInfiniteScroll } from '@vueuse/core'
 import type { UserInfoDto, UserResponsePagedResult } from '~/utils/apiEndpoints'
 
 definePageMeta({
@@ -10,58 +11,19 @@ definePageMeta({
   order: 1
 })
 
-// type UserTableRow = UserResponse & {
-//   AvatarUrl?: string | null
-//   PhoneNumber?: string | null
-//   RoleNames?: string[] | null
-//   IsActive?: boolean
-//   CreatedAt?: string | null
-// }
+const pageSize = 10
 
+const { $api } = useNuxtApp()
 const toast = useToast()
 const keyword = ref('')
 const submittedKeyword = ref('')
-
-const mockUsers: UserInfoDto[] = [
-  {
-    UserName: 'admin',
-    EmployeeName: 'System Admin',
-    Email: 'admin@example.com',
-    PhoneNumber: null,
-    AvatarUrl: null,
-    RoleNames: ['系統管理員'],
-    IsActive: true,
-    CreatedAt: '2026-06-22 08:00:00+08',
-    LastLoginAt: '2026-07-21 10:58:42.658017+08'
-  },
-  {
-    UserName: 'oliver.liou',
-    EmployeeName: 'Oliver Liou',
-    Email: 'oliver.liou@example.com',
-    PhoneNumber: '0912-345-678',
-    AvatarUrl: null,
-    RoleNames: ['管理者', '編輯者'],
-    IsActive: true,
-    CreatedAt: '2026-06-25 09:30:00+08',
-    LastLoginAt: '2026-07-20 16:42:18+08'
-  },
-  {
-    UserName: 'amy.chen',
-    EmployeeName: 'Amy Chen',
-    Email: 'amy.chen@example.com',
-    PhoneNumber: '0988-765-432',
-    AvatarUrl: null,
-    RoleNames: ['一般使用者'],
-    IsActive: false,
-    CreatedAt: '2026-07-01 13:15:00+08',
-    LastLoginAt: null
-  }
-]
-
-const mockResult = {
-  Items: mockUsers,
-  TotalCount: mockUsers.length
-} satisfies UserResponsePagedResult
+const users = ref<UserInfoDto[]>([])
+const currentPage = ref(0)
+const totalCount = ref(0)
+const isLoading = ref(false)
+const isResetting = ref(false)
+const hasLoaded = ref(false)
+const loadError = ref<string | null>(null)
 
 const columns: TableColumn<UserInfoDto>[] = [
   { id: 'person', accessorKey: 'EmployeeName', header: '人員' },
@@ -74,22 +36,72 @@ const columns: TableColumn<UserInfoDto>[] = [
   { id: 'actions', header: '操作' }
 ]
 
-const filteredUsers = computed(() => {
-  const normalizedKeyword = submittedKeyword.value.trim().toLocaleLowerCase()
+const table = useTemplateRef('table')
+const hasMore = computed(() => hasLoaded.value && users.value.length < totalCount.value)
 
-  if (!normalizedKeyword) {
-    return mockResult.Items
+async function loadUsers(options: { reset?: boolean } = {}) {
+  const reset = options.reset ?? false
+
+  if (isLoading.value || (!reset && !hasMore.value)) {
+    return
   }
 
-  return mockResult.Items.filter(user => {
-    return [user.UserName, user.EmployeeName, user.Email].some(value =>
-      value?.toLocaleLowerCase().includes(normalizedKeyword)
-    )
-  })
-})
+  if (reset) {
+    users.value = []
+    currentPage.value = 0
+    totalCount.value = 0
+    hasLoaded.value = false
+    isResetting.value = true
+  }
 
-function handleSearch() {
-  submittedKeyword.value = keyword.value
+  isLoading.value = true
+  loadError.value = null
+
+  try {
+    const pageToLoad = reset ? 1 : currentPage.value + 1
+    const querySearch = submittedKeyword.value.trim() || undefined
+    const request = apiEndpoints.user.findUsers(pageToLoad, pageSize, querySearch)
+    const result = await $api<UserResponsePagedResult>(
+      request.path,
+      request.options
+    )
+
+    if (typeof result.TotalCount !== 'number') {
+      throw new Error('使用者分頁 API 未回傳有效的總筆數')
+    }
+
+    const items = result.Items ?? []
+    users.value = reset ? items : [...users.value, ...items]
+    currentPage.value = pageToLoad
+    totalCount.value = result.TotalCount
+    hasLoaded.value = true
+  } catch (error) {
+    console.error('[Users] Failed to load users:', error)
+
+    loadError.value = error instanceof Error
+      ? error.message
+      : '載入使用者資料失敗，請稍後再試。'
+
+    toast.add({
+      title: '載入使用者失敗',
+      description: loadError.value,
+      icon: 'i-lucide-circle-alert',
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+    isResetting.value = false
+  }
+}
+
+async function handleSearch() {
+  submittedKeyword.value = keyword.value.trim()
+
+  if (table.value?.$el instanceof HTMLElement) {
+    table.value.$el.scrollTo({ top: 0 })
+  }
+
+  await loadUsers({ reset: true })
 }
 
 function handleAddUser() {
@@ -109,6 +121,28 @@ function handleEditUser(user: UserInfoDto) {
     color: 'info'
   })
 }
+
+onMounted(async () => {
+  await loadUsers({ reset: true })
+
+  const tableElement = table.value?.$el
+
+  if (!(tableElement instanceof HTMLElement)) {
+    console.error('[Users] Unable to initialize infinite scroll: table element not found')
+    return
+  }
+
+  useInfiniteScroll(
+    tableElement,
+    () => loadUsers(),
+    {
+      distance: 200,
+      canLoadMore: () => {
+        return !isLoading.value && !loadError.value && hasMore.value
+      }
+    }
+  )
+})
 </script>
 
 <template>
@@ -122,7 +156,12 @@ function handleEditUser(user: UserInfoDto) {
           class="w-full sm:max-w-sm"
         />
 
-        <UButton type="submit" label="搜尋" />
+        <UButton
+          type="submit"
+          label="搜尋"
+          :loading="isResetting"
+          :disabled="isLoading"
+        />
       </div>
 
       <UTooltip text="新增使用者">
@@ -139,11 +178,14 @@ function handleEditUser(user: UserInfoDto) {
 
     <div class="min-w-0 overflow-x-auto rounded-lg border border-default bg-default">
       <UTable
-        :data="filteredUsers"
+        ref="table"
+        :data="users"
         :columns="columns"
-        class="min-w-max"
+        :loading="isLoading"
+        sticky
+        class="h-80 min-w-max sm:h-96 lg:h-[32rem]"
         :ui="{
-          th: 'whitespace-nowrap text-center',
+          th: 'whitespace-nowrap',
           td: 'h-15 whitespace-nowrap'
         }"
       >
@@ -185,7 +227,7 @@ function handleEditUser(user: UserInfoDto) {
         </template>
 
         <template #status-cell="{ row }">
-          <div class="flex justify-center">
+          <div class="flex">
             <UCheckbox
               :model-value="row.original.IsActive"
               :aria-label="row.original.IsActive ? '帳號已啟用' : '帳號未啟用'"
@@ -216,12 +258,43 @@ function handleEditUser(user: UserInfoDto) {
         </template>
 
         <template #empty>
-          <div class="flex flex-col items-center gap-2 py-12 text-center">
+          <div
+            v-if="loadError"
+            class="flex flex-col items-center gap-3 py-12 text-center"
+          >
+            <UIcon name="i-lucide-circle-alert" class="size-8 text-error" />
+            <p class="text-sm text-error">{{ loadError }}</p>
+            <UButton
+              label="重新載入"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              :loading="isLoading"
+              @click="loadUsers({ reset: true })"
+            />
+          </div>
+
+          <div v-else class="flex flex-col items-center gap-2 py-12 text-center">
             <UIcon name="i-lucide-search-x" class="size-8 text-dimmed" />
             <p class="text-sm text-muted">找不到符合條件的使用者</p>
           </div>
         </template>
       </UTable>
+
+      <div
+        v-if="loadError && users.length"
+        class="flex items-center justify-center gap-2 border-t border-default px-4 py-2 text-sm text-error"
+      >
+        <span>{{ loadError }}</span>
+        <UButton
+          label="重試"
+          color="neutral"
+          variant="outline"
+          size="xs"
+          :loading="isLoading"
+          @click="loadUsers()"
+        />
+      </div>
     </div>
   </div>
 </template>
