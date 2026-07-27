@@ -16,8 +16,8 @@ export enum HttpMethod {
 
 /** 一般登入請求物件 */
 export interface LoginRequest {
-  UserName: string
-  Password: string
+  UserName: string | null
+  Password: string | null
 }
 
 /** AD 登入請求物件 */
@@ -38,18 +38,35 @@ export interface RefreshTokenRequest {
   RefreshToken: string
 }
 
+/** 角色資料回應物件 */
+export interface RoleResponse {
+  Id: string | null
+  RoleDesc: string | null
+}
+
 /** 使用者個人資料 DTO */
 export interface UserInfoDto {
   Id?: string | null
-  UserName?: string | null
+  EmployeeName?: string | null
+  PhoneNumber?: string | null
+  Email?: string | null
+  AvatarUrl?: string | null
+  CreatedAt?: string | null
+  RoleDescs?: string[] | null
+}
+
+/** 使用者列表單筆資料 DTO */
+export interface UserListItemDto {
+  Id?: string | null
+  UserName: string | null
   EmployeeName?: string | null
   Email?: string | null
-  PhoneNumber?: string | null
   AvatarUrl?: string | null
+  PhoneNumber?: string | null
   IsActive?: boolean
-  CreatedAt: string | null
+  CreatedAt?: string | null
   LastLoginAt?: string | null
-  RoleNames?: string[] | null
+  Roles?: RoleResponse[] | null
 }
 
 /** 更新使用者資料的請求 DTO */
@@ -58,7 +75,11 @@ export interface UpdateUserRequest {
   Email?: string | null
   PhoneNumber?: string | null
   IsActive?: boolean
-  RoleNames?: string[] | null
+}
+
+/** 更新使用者角色權限的請求 DTO */
+export interface UpdateUserRolesRequest {
+  Roles?: string[] | null
 }
 
 // ============================================================================
@@ -83,19 +104,10 @@ export interface Table1ResponsePagedResult {
   TotalCount?: number
 }
 
-/** 使用者回應物件 */
-export type UserResponse = UserInfoDto
-
 /** 使用者分頁查詢結果包裝物件 */
-export interface UserResponsePagedResult {
-  Items?: UserResponse[] | null
+export interface UserListItemDtoPagedResult {
+  Items?: UserListItemDto[] | null
   TotalCount?: number
-}
-
-/** 角色回應物件 */
-export interface RoleResponse {
-  Id?: string | null
-  RoleDesc?: string | null
 }
 
 // ============================================================================
@@ -248,7 +260,18 @@ export const apiEndpoints = {
       }
     },
 
-    /** 上傳使用者大頭貼 (multipart/form-data)，回傳新的相對路徑 */
+    /** 更新使用者角色權限 */
+    updateUserRoles(userId: string, body: UpdateUserRolesRequest) {
+      return {
+        path: `/User/UpdateUserRoles/${userId}`,
+        options: {
+          method: HttpMethod.PUT,
+          body
+        }
+      }
+    },
+
+    /** 上傳使用者大頭貼 (multipart/form-data)，後端轉檔為 WebP 並儲存 */
     uploadAvatar(userId: string, file: File) {
       const formData = new FormData()
       formData.append('file', file)

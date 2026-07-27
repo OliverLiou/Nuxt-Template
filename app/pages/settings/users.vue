@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import { useInfiniteScroll } from '@vueuse/core'
-import type { UserInfoDto, UserResponsePagedResult } from '~/utils/apiEndpoints'
+import type { UserListItemDto, UserListItemDtoPagedResult } from '~/utils/apiEndpoints'
+import type { Column } from '@tanstack/vue-table'
 
 definePageMeta({
   parentId: 'system-settings', // 指定父節點為虛擬節點 "系統設定"
@@ -17,23 +18,35 @@ const { $api } = useNuxtApp()
 const toast = useToast()
 const keyword = ref('')
 const submittedKeyword = ref('')
-const users = ref<UserInfoDto[]>([])
+const users = ref<UserListItemDto[]>([])
 const currentPage = ref(0)
 const totalCount = ref(0)
 const isLoading = ref(false)
 const isResetting = ref(false)
 const hasLoaded = ref(false)
 const loadError = ref<string | null>(null)
+const UButton = resolveComponent('UButton')
+const columnPinning = ref({
+  left: ['person'],
+  right: ['actions']
+})
 
-const columns: TableColumn<UserInfoDto>[] = [
-  { id: 'person', accessorKey: 'EmployeeName', header: '人員' },
+const columns: TableColumn<UserListItemDto>[] = [
+  { 
+    id: 'person',
+    accessorKey: 'EmployeeName',
+    header: ({column}) => getHeader(column, '人員', 'left'), 
+  },
   { id: 'email', accessorKey: 'Email', header: 'Email' },
   { id: 'phone', accessorKey: 'PhoneNumber', header: '電話號碼' },
-  { id: 'roles', accessorKey: 'RoleNames', header: '角色' },
+  { id: 'roles', accessorKey: 'Roles', header: '角色' },
   { id: 'status', accessorKey: 'IsActive', header: '帳號狀態' },
   { id: 'createdAt', accessorKey: 'CreatedAt', header: '建立時間' },
   { id: 'lastLoginAt', accessorKey: 'LastLoginAt', header: '最後登入時間' },
-  { id: 'actions', header: '操作' }
+  { 
+    id: 'actions',
+    header: ({column}) => getHeader(column, '操作', 'right'),
+  }
 ]
 
 const table = useTemplateRef('table')
@@ -61,7 +74,7 @@ async function loadUsers(options: { reset?: boolean } = {}) {
     const pageToLoad = reset ? 1 : currentPage.value + 1
     const querySearch = submittedKeyword.value.trim() || undefined
     const request = apiEndpoints.user.findUsers(pageToLoad, pageSize, querySearch)
-    const result = await $api<UserResponsePagedResult>(
+    const result = await $api<UserListItemDtoPagedResult>(
       request.path,
       request.options
     )
@@ -113,12 +126,27 @@ function handleAddUser() {
   })
 }
 
-function handleEditUser(user: UserInfoDto) {
+function handleEditUser(user: UserListItemDto) {
   toast.add({
     title: '編輯使用者',
     description: `已選取 ${user.EmployeeName || user.UserName || '使用者'}。`,
     icon: 'i-lucide-user-pen',
     color: 'info'
+  })
+}
+
+function getHeader(column: Column<UserListItemDto>, label: string, position: 'left' | 'right') {
+  const isPinned = column.getIsPinned()
+
+  return h(UButton, {
+    color: 'neutral',
+    variant: 'ghost',
+    label,
+    icon: isPinned ? 'i-lucide-pin-off' : 'i-lucide-pin',
+    class: '-mx-2.5 text-highlighted font-semibold',
+    onClick() {
+      column.pin(isPinned === position ? false : position)
+    }
   })
 }
 
@@ -146,21 +174,21 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-col gap-2">
-    <form class="flex flex-col gap-2 px-1 sm:flex-row sm:items-center" @submit.prevent="handleSearch">
-      <div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+  <div class="flex min-w-0 w-full flex-1 flex-col divide-y divide-accented overflow-hidden rounded-lg border border-default">
+    <div class="flex items-center gap-2 overflow-x-auto px-3.5 py-2">
+      <div class="flex min-w-0 flex-1 items-center gap-2">
         <UInput
           v-model="keyword"
           icon="i-lucide-search"
-          placeholder="請輸入帳號、姓名、Email"
-          class="w-full sm:max-w-sm"
+          placeholder="請輸入關鍵字.."
+          class="max-w-sm min-w-[16ch]"
         />
 
         <UButton
-          type="submit"
           label="搜尋"
           :loading="isResetting"
           :disabled="isLoading"
+          @click="handleSearch"
         />
       </div>
 
@@ -170,23 +198,24 @@ onMounted(async () => {
           icon="i-lucide-user-round-plus"
           color="neutral"
           variant="outline"
-          aria-label="新增使用者"
           @click="handleAddUser"
         />
       </UTooltip>
-    </form>
+    </div>
 
-    <div class="min-w-0 overflow-x-auto rounded-lg border border-default bg-default">
+    <div class="min-w-0 overflow-x-auto">
       <UTable
         ref="table"
         :data="users"
         :columns="columns"
         :loading="isLoading"
         sticky
-        class="h-80 min-w-max sm:h-96 lg:h-[32rem]"
+        class="h-96"
+        v-model:column-pinning="columnPinning"
         :ui="{
           th: 'whitespace-nowrap',
-          td: 'h-15 whitespace-nowrap'
+          td: 'h-10 truncate',
+          separator: 'z-2',
         }"
       >
         <template #person-cell="{ row }">
@@ -213,27 +242,25 @@ onMounted(async () => {
         </template>
 
         <template #roles-cell="{ row }">
-          <div class="flex items-center gap-1.5">
+          <div class="flex gap-1.5">
             <UBadge
-              v-for="role in row.original.RoleNames || []"
-              :key="role"
-              :label="role"
+              v-for="(role, index) in row.original.Roles || []"
+              :key="role.Id || role.RoleDesc || index"
+              :label="role.RoleDesc || role.Id || '—'"
               color="info"
               variant="subtle"
               size="md"
             />
-            <span v-if="!row.original.RoleNames?.length" class="text-muted">—</span>
+            <span v-if="!row.original.Roles?.length" class="text-muted">—</span>
           </div>
         </template>
 
         <template #status-cell="{ row }">
-          <div class="flex">
-            <UCheckbox
-              :model-value="row.original.IsActive"
-              :aria-label="row.original.IsActive ? '帳號已啟用' : '帳號未啟用'"
-              disabled
-            />
-          </div>
+          <UBadge
+            :label="row.original.IsActive ? '已啟用' : '已停用'"
+            :color="row.original.IsActive ? 'primary' : 'neutral'"
+            variant="subtle"
+          />
         </template>
 
         <template #createdAt-cell="{ row }">
@@ -249,9 +276,8 @@ onMounted(async () => {
             <UButton
               icon="i-lucide-user-pen"
               color="neutral"
-              variant="outline"
-              size="sm"
-              aria-label="編輯使用者"
+              variant="subtle"
+              size="md"
               @click="handleEditUser(row.original)"
             />
           </UTooltip>
@@ -280,21 +306,6 @@ onMounted(async () => {
           </div>
         </template>
       </UTable>
-
-      <div
-        v-if="loadError && users.length"
-        class="flex items-center justify-center gap-2 border-t border-default px-4 py-2 text-sm text-error"
-      >
-        <span>{{ loadError }}</span>
-        <UButton
-          label="重試"
-          color="neutral"
-          variant="outline"
-          size="xs"
-          :loading="isLoading"
-          @click="loadUsers()"
-        />
-      </div>
     </div>
   </div>
 </template>

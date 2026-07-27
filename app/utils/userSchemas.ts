@@ -29,7 +29,7 @@ export const personalUserUpdateSchema = z.object({
 
 export const adminUserUpdateSchema = personalUserUpdateSchema.extend({
   IsActive: z.boolean(),
-  RoleNames: z.array(z.string().trim().min(1, '角色名稱不可為空'))
+  RoleIds: z.array(z.string().trim().min(1, '角色 ID 不可為空'))
     .refine(
       roles => new Set(roles.map(role => role.trim())).size === roles.length,
       '角色不可重複'

@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { UpdateUserRequest, UserInfoDto } from '~/utils/apiEndpoints'
+import type { SelectMenuItem } from '@nuxt/ui'
+import type {
+  RoleResponse,
+  UpdateUserRequest,
+  UpdateUserRolesRequest,
+  UserInfoDto,
+  UserListItemDto
+} from '~/utils/apiEndpoints'
 import {
   adminUserUpdateSchema,
   personalUserUpdateSchema,
@@ -10,8 +17,8 @@ export type UserEditMode = 'personal' | 'admin'
 
 const props = withDefaults(defineProps<{
   mode?: UserEditMode
-  user?: UserInfoDto | null
-  roleOptions?: string[]
+  user?: UserListItemDto | null
+  roleOptions?: RoleResponse[]
 }>(), {
   mode: 'personal',
   user: null,
@@ -37,7 +44,7 @@ const state = reactive<AdminUserUpdateForm & { AvatarUrl: string | null }>({
   Email: '',
   PhoneNumber: '',
   IsActive: true,
-  RoleNames: [],
+  RoleIds: [],
   AvatarUrl: null
 })
 
@@ -68,10 +75,27 @@ const modalDescription = computed(() => (
     : '您只能修改自己的姓名、Email 與電話。'
 ))
 
-const availableRoles = computed(() => normalizeRoles([
-  ...props.roleOptions,
-  ...(sourceUser.value?.RoleNames ?? [])
-]))
+const availableRoles = computed<SelectMenuItem[]>(() => {
+  const roles = new Map<string, string>(Object.entries(userStore.roleMap))
+
+  for (const role of props.roleOptions) {
+    if (role.Id) {
+      roles.set(role.Id, role.RoleDesc ?? role.Id)
+    }
+  }
+
+  if (isUserListItem(sourceUser.value)) {
+    for (const role of sourceUser.value.Roles ?? []) {
+      if (role.Id) {
+        roles.set(role.Id, role.RoleDesc ?? role.Id)
+      }
+    }
+  }
+
+  return [...roles.entries()]
+    .map(([id, label]) => ({ id, label }))
+    .sort((left, right) => left.label.localeCompare(right.label))
+})
 
 const isDirty = computed(() => (
   initialSnapshot.value !== '' && createSnapshot() !== initialSnapshot.value
@@ -81,7 +105,13 @@ const isSubmitDisabled = computed(() => (
   !sourceUser.value?.Id || !isDirty.value || isSubmitting.value
 ))
 
-function normalizeRoles(roles: string[]) {
+function isUserListItem(
+  user: UserInfoDto | UserListItemDto | null
+): user is UserListItemDto {
+  return user !== null && 'UserName' in user
+}
+
+function normalizeRoleIds(roles: string[]) {
   return [...new Set(
     roles
       .map(role => role.trim())
@@ -104,7 +134,7 @@ function createSnapshot() {
   return JSON.stringify({
     ...personalFields,
     IsActive: state.IsActive,
-    RoleNames: normalizeRoles(state.RoleNames)
+    RoleIds: normalizeRoleIds(state.RoleIds)
   })
 }
 
@@ -114,8 +144,14 @@ function initializeForm() {
   state.EmployeeName = user?.EmployeeName ?? ''
   state.Email = user?.Email ?? ''
   state.PhoneNumber = user?.PhoneNumber ?? ''
-  state.IsActive = user?.IsActive ?? true
-  state.RoleNames = [...(user?.RoleNames ?? [])]
+  state.IsActive = isUserListItem(user) ? user.IsActive ?? true : true
+  state.RoleIds = isUserListItem(user)
+    ? normalizeRoleIds(
+        (user.Roles ?? [])
+          .map(role => role.Id)
+          .filter((id): id is string => id !== null)
+      )
+    : []
   state.AvatarUrl = user?.AvatarUrl ?? null
   initialSnapshot.value = createSnapshot()
   form.value?.clear()
@@ -157,7 +193,7 @@ async function handleAvatarChange(event: Event) {
 
   try {
     const uploadRequest = apiEndpoints.user.uploadAvatar(userId, file)
-    await $api<{ AvatarUrl: string }>(
+    await $api<void>(
       uploadRequest.path,
       uploadRequest.options
     )
@@ -224,10 +260,15 @@ function createUpdateRequest(): UpdateUserRequest {
 
   if (props.mode === 'admin') {
     request.IsActive = state.IsActive
-    request.RoleNames = normalizeRoles(state.RoleNames)
   }
 
   return request
+}
+
+function createUpdateRolesRequest(): UpdateUserRolesRequest {
+  return {
+    Roles: normalizeRoleIds(state.RoleIds)
+  }
 }
 
 async function onSubmit() {
@@ -246,12 +287,20 @@ async function onSubmit() {
     )
     await $api<unknown>(updateRequest.path, updateRequest.options)
 
-    const profileRequest = apiEndpoints.user.getUserProfile()
-    const currentUser = await $api<UserInfoDto>(
-      profileRequest.path,
-      profileRequest.options
-    )
-    userStore.setUser(currentUser)
+    if (props.mode === 'admin') {
+      const rolesRequest = apiEndpoints.user.updateUserRoles(
+        userId,
+        createUpdateRolesRequest()
+      )
+      await $api<unknown>(rolesRequest.path, rolesRequest.options)
+    } else {
+      const profileRequest = apiEndpoints.user.getUserProfile()
+      const currentUser = await $api<UserInfoDto>(
+        profileRequest.path,
+        profileRequest.options
+      )
+      userStore.setUser(currentUser)
+    }
 
     emit('updated', userId)
     toast.add({
@@ -429,14 +478,15 @@ watch(
             </UFormField>
 
             <UFormField
-              name="RoleNames"
+              name="RoleIds"
               label="角色"
               description="可為使用者指派一個或多個角色。"
               class="rounded-xl"
             >
               <USelectMenu
-                v-model="state.RoleNames"
+                v-model="state.RoleIds"
                 :items="availableRoles"
+                value-key="id"
                 multiple
                 class="w-full"
                 placeholder="請選擇角色"
