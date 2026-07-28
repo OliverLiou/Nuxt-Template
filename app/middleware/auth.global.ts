@@ -4,7 +4,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const userStore = useUserStore()
   const systemStore = useSystemStore()
   const { $api } = useNuxtApp()
-  const { initializeUserReferenceData } = useUserReferenceData()
 
   // 1. 當路由進入 /login 時，最優先在伺服器端或客戶端清除 Cookie 與重置 Store
   if (to.path === '/login') {
@@ -87,6 +86,4 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
-  // Token 與必要的使用者資料均確認成功後，再載入顯示用參考資料。
-  await initializeUserReferenceData()
 })

@@ -76,7 +76,7 @@ const modalDescription = computed(() => (
 ))
 
 const availableRoles = computed<SelectMenuItem[]>(() => {
-  const roles = new Map<string, string>(Object.entries(userStore.roleMap))
+  const roles = new Map<string, string>()
 
   for (const role of props.roleOptions) {
     if (role.Id) {
