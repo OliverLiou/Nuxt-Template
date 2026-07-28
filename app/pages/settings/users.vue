@@ -258,17 +258,18 @@ onMounted(async () => {
         <template #status-cell="{ row }">
           <UBadge
             :label="row.original.IsActive ? '已啟用' : '已停用'"
-            :color="row.original.IsActive ? 'primary' : 'neutral'"
-            variant="subtle"
+            :color="row.original.IsActive ? 'primary' : 'warning'"
+            :icon="row.original.IsActive ? 'lucide:square-check' : 'lucide:square-x'"
+            variant="outline"
           />
         </template>
 
         <template #createdAt-cell="{ row }">
-          <span class="text-muted">{{ row.original.CreatedAt || '—' }}</span>
+          <span class="text-muted">{{ formatDate(row.original.CreatedAt) || '—' }}</span>
         </template>
 
         <template #lastLoginAt-cell="{ row }">
-          <span class="text-muted">{{ row.original.LastLoginAt || '—' }}</span>
+          <span class="text-muted">{{ formatDate(row.original.LastLoginAt) || '—' }}</span>
         </template>
 
         <template #actions-cell="{ row }">

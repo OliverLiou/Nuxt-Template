@@ -174,7 +174,11 @@ const userMenuItems = [
     </UDashboardSidebar>
 
     <!-- 主面板 -->
-    <UDashboardPanel>
+    <UDashboardPanel
+      :ui="{ 
+        body: 'p-2 sm:p-4'
+      }"
+    >
       <!-- 全域頁首 Header -->
       <template #header>
         <UDashboardNavbar :title="pageTitle">
