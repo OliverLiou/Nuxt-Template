@@ -195,8 +195,7 @@ const userMenuItems = [
     </UDashboardPanel>
   </UDashboardGroup>
 
-  <UserEditModal
+  <UserProfileEditModal
     v-model:open="isUserProfileOpen"
-    mode="personal"
   />
 </template>
