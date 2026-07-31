@@ -69,17 +69,19 @@ export interface UserListItemDto {
   Roles?: RoleResponse[] | null
 }
 
-/** 更新使用者資料的請求 DTO */
-export interface UpdateUserRequest {
-  EmployeeName?: string | null
-  Email?: string | null
+/** 更新目前登入使用者個人資料的請求 DTO */
+export interface UpdateMyProfileRequest {
+  EmployeeName: string
   PhoneNumber?: string | null
-  IsActive?: boolean
 }
 
-/** 更新使用者角色權限的請求 DTO */
-export interface UpdateUserRolesRequest {
-  Roles?: string[] | null
+/** 管理員更新使用者資料的請求 DTO */
+export interface AdminUpdateUserRequest {
+  EmployeeName: string
+  Email: string | null
+  PhoneNumber: string | null
+  IsActive: boolean
+  Roles: string[]
 }
 
 // ============================================================================
@@ -249,10 +251,10 @@ export const apiEndpoints = {
       }
     },
 
-    /** 更新使用者資料 */
-    updateUser(userId: string, body: UpdateUserRequest) {
+    /** 更新目前登入使用者的個人資料 */
+    updateMyProfile(body: UpdateMyProfileRequest) {
       return {
-        path: `/User/UpdateUser/${userId}`,
+        path: '/User/UpdateMyProfile',
         options: {
           method: HttpMethod.PUT,
           body
@@ -260,10 +262,10 @@ export const apiEndpoints = {
       }
     },
 
-    /** 更新使用者角色權限 */
-    updateUserRoles(userId: string, body: UpdateUserRolesRequest) {
+    /** 管理員更新指定使用者的資料與角色權限 */
+    updateUserByAdmin(userId: string, body: AdminUpdateUserRequest) {
       return {
-        path: `/User/UpdateUserRoles/${userId}`,
+        path: `/User/UpdateUserByAdmin/${userId}`,
         options: {
           method: HttpMethod.PUT,
           body
