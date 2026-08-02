@@ -203,18 +203,18 @@ onMounted(async () => {
       </UTooltip>
     </div>
 
-    <div class="min-w-0 overflow-x-auto">
+    <div class="min-h-0 min-w-0 flex-1">
       <UTable
         ref="table"
         :data="users"
         :columns="columns"
         :loading="isLoading"
         sticky
-        class="h-96"
+        class="h-full"
         v-model:column-pinning="columnPinning"
         :ui="{
           th: 'whitespace-nowrap',
-          td: 'h-10 truncate',
+          td: 'h-10 truncate py-2',
           separator: 'z-2',
         }"
       >
