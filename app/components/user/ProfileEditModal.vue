@@ -264,9 +264,9 @@ watch(
                     v-for="role in roleDescs"
                     :key="role"
                     :label="role"
-                    variant="outline"
+                    variant="solid"
                     color="neutral"
-                    size="lg"
+                    size="md"
                   />
                 </template>
                 <p v-else class="text-sm text-muted">
