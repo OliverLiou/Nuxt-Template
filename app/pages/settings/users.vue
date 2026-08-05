@@ -51,6 +51,7 @@ const columns: TableColumn<UserListItemDto>[] = [
     accessorKey: 'EmployeeName',
     header: ({column}) => getHeader(column, '人員', 'left'), 
   },
+  { id: 'userName', accessorKey: 'UserName', header: '登入帳號' },
   { id: 'email', accessorKey: 'Email', header: 'Email' },
   { id: 'phone', accessorKey: 'PhoneNumber', header: '電話號碼' },
   { id: 'roles', accessorKey: 'Roles', header: '角色' },
@@ -325,8 +326,8 @@ onMounted(async () => {
           <div class="flex gap-1.5">
             <UBadge
               v-for="(role, index) in row.original.Roles || []"
-              :key="role.Id || role.RoleDesc || index"
-              :label="role.RoleDesc || role.Id || '—'"
+              :key="role.RoleName || role.RoleDesc || index"
+              :label="role.RoleDesc || role.RoleName || '—'"
               color="info"
               variant="subtle"
               size="md"
