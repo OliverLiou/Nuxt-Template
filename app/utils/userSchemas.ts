@@ -33,6 +33,11 @@ const passwordSchema = z.string()
   .regex(/[A-Z]/, '密碼需包含大寫字母')
   .regex(/\d/, '密碼需包含數字')
 
+const userNameSchema = z.string()
+  .trim()
+  .min(4, '帳號名稱至少需要 4 個字元')
+  .max(50, '帳號名稱不可超過 50 個字元')
+
 export const adminUserEditSchema = z.object({
   EmployeeName: employeeNameSchema,
   Email: emailSchema,
@@ -43,6 +48,7 @@ export const adminUserEditSchema = z.object({
 
 export const adminUserCreateSchema = adminUserEditSchema
   .extend({
+    UserName: userNameSchema,
     Password: passwordSchema,
     PasswordConfirm: z.string().min(1, '請再次輸入密碼')
   })

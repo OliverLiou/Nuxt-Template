@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { AdminUpdateUserRequest, UserListItemDto } from '~/utils/apiEndpoints'
+import type {
+  AdminCreateUserRequest,
+  AdminUpdateUserRequest,
+  UserListItemDto
+} from '~/utils/apiEndpoints'
 import {
   adminUserCreateSchema,
   adminUserEditSchema,
@@ -33,6 +37,7 @@ const isSubmitting = ref(false)
 const apiError = ref<string | null>(null)
 
 const state = reactive<AdminUserForm>({
+  UserName: '',
   EmployeeName: '',
   Email: '',
   Password: '',
@@ -52,14 +57,14 @@ const roleOptions = computed<RoleOption[]>(() => {
   const roles = new Map<string, RoleOption>()
 
   for (const role of userStore.roles) {
-    if (!role.Id) {
+    if (!role.RoleName) {
       continue
     }
 
-    const label = role.RoleDesc?.trim() || role.Id
-    roles.set(role.Id, {
+    const label = role.RoleDesc?.trim() || role.RoleName
+    roles.set(role.RoleName, {
       label,
-      value: role.Id,
+      value: role.RoleName,
       icon: /管理|admin/i.test(label)
         ? 'i-lucide-user-cog'
         : 'i-lucide-circle-user-round'
@@ -72,6 +77,7 @@ const roleOptions = computed<RoleOption[]>(() => {
 function initializeForm() {
   const user = props.mode === 'edit' ? props.selectedUser : null
 
+  state.UserName = ''
   state.EmployeeName = user?.EmployeeName ?? ''
   state.Email = user?.Email ?? ''
   state.Password = ''
@@ -79,8 +85,8 @@ function initializeForm() {
   state.PhoneNumber = user?.PhoneNumber ?? ''
   state.IsActive = user?.IsActive ?? false
   state.Roles = user?.Roles
-    ?.map(role => role.Id)
-    .filter((roleId): roleId is string => Boolean(roleId))
+    ?.map(role => role.RoleName)
+    .filter(roleName => Boolean(roleName))
     ?? []
 
   apiError.value = null
@@ -102,6 +108,19 @@ async function handleUnauthorized() {
   await navigateTo('/login')
 }
 
+function createCreateRequest(): AdminCreateUserRequest {
+  return {
+    UserName: state.UserName.trim(),
+    EmployeeName: state.EmployeeName.trim(),
+    Email: state.Email.trim() || null,
+    Password: state.Password,
+    PasswordConfirm: state.PasswordConfirm,
+    PhoneNumber: state.PhoneNumber.trim() || null,
+    IsActive: state.IsActive,
+    Roles: [...state.Roles]
+  }
+}
+
 function createUpdateRequest(): AdminUpdateUserRequest {
   return {
     EmployeeName: state.EmployeeName.trim(),
@@ -119,17 +138,43 @@ async function onSubmit() {
 
   if (props.mode === 'create') {
     isSubmitting.value = true
+    apiError.value = null
+    let saved = false
 
     try {
+      const request = apiEndpoints.user.createUserByAdmin(createCreateRequest())
+      await $api<unknown>(request.path, request.options)
+
       toast.add({
-        title: '建立功能尚未串接',
-        description: '後端建立使用者 API 尚未實作，資料尚未送出。',
-        icon: 'i-lucide-info',
-        color: 'info'
+        title: '建立成功',
+        description: '使用者帳號已完成建立。',
+        icon: 'i-lucide-circle-check',
+        color: 'success'
       })
-      await nextTick()
+      saved = true
+    } catch (error) {
+      console.error('[UserForm] Failed to create user:', error)
+
+      const normalizedError = normalizeApiError(error, '建立使用者失敗，請稍後再試。')
+      apiError.value = normalizedError.message
+
+      toast.add({
+        title: '建立失敗',
+        description: normalizedError.message,
+        icon: 'i-lucide-circle-x',
+        color: 'error'
+      })
+
+      if (normalizedError.statusCode === 401) {
+        await handleUnauthorized()
+        return
+      }
     } finally {
       isSubmitting.value = false
+    }
+
+    if (saved) {
+      emit('saved')
     }
 
     return
@@ -236,6 +281,25 @@ defineExpose({
       class="space-y-4"
       @submit="onSubmit"
     >
+      <UFormField
+        v-if="mode === 'create'"
+        name="UserName"
+        label="帳號名稱"
+        description="請輸入 4–50 個字元"
+        required
+        orientation="horizontal"
+        class="grid grid-cols-2 items-start gap-2.5"
+        :ui="{ container: 'mt-0 min-w-0' }"
+      >
+        <UInput
+          v-model="state.UserName"
+          autocomplete="username"
+          minlength="4"
+          maxlength="50"
+          class="w-full"
+        />
+      </UFormField>
+
       <UFormField
         name="EmployeeName"
         label="姓名"

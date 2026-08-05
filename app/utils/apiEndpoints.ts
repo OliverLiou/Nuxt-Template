@@ -40,7 +40,7 @@ export interface RefreshTokenRequest {
 
 /** 角色資料回應物件 */
 export interface RoleResponse {
-  Id: string | null
+  RoleName: string
   RoleDesc: string | null
 }
 
@@ -82,6 +82,13 @@ export interface AdminUpdateUserRequest {
   PhoneNumber: string | null
   IsActive: boolean
   Roles: string[]
+}
+
+/** 管理員建立使用者的請求 DTO */
+export interface AdminCreateUserRequest extends AdminUpdateUserRequest {
+  UserName: string
+  Password: string
+  PasswordConfirm: string
 }
 
 // ============================================================================
@@ -257,6 +264,17 @@ export const apiEndpoints = {
         path: '/User/UpdateMyProfile',
         options: {
           method: HttpMethod.PUT,
+          body
+        }
+      }
+    },
+
+    /** 管理員建立使用者並設定角色權限 */
+    createUserByAdmin(body: AdminCreateUserRequest) {
+      return {
+        path: '/User/CreateUserByAdmin',
+        options: {
+          method: HttpMethod.POST,
           body
         }
       }
