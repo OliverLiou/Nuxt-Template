@@ -3,6 +3,13 @@ import type { TableColumn } from '@nuxt/ui'
 import { useInfiniteScroll } from '@vueuse/core'
 import type { UserListItemDto, UserListItemDtoPagedResult } from '~/utils/apiEndpoints'
 import type { Column } from '@tanstack/vue-table'
+import type { UserFormMode } from '~/components/user/Form.vue'
+
+interface UserFormExposed {
+  isSubmitting: boolean
+  reset: () => void
+  submit: () => Promise<void>
+}
 
 definePageMeta({
   parentId: 'system-settings', // 指定父節點為虛擬節點 "系統設定"
@@ -16,6 +23,8 @@ const pageSize = 10
 
 const { $api } = useNuxtApp()
 const toast = useToast()
+const userStore = useUserStore()
+const systemStore = useSystemStore()
 const keyword = ref('')
 const submittedKeyword = ref('')
 const users = ref<UserListItemDto[]>([])
@@ -25,6 +34,11 @@ const isLoading = ref(false)
 const isResetting = ref(false)
 const hasLoaded = ref(false)
 const loadError = ref<string | null>(null)
+const isUserDrawerOpen = ref(false)
+const userFormMode = ref<UserFormMode>('create')
+const selectedUser = ref<UserListItemDto | null>(null)
+const userForm = useTemplateRef<UserFormExposed>('userForm')
+const userFormId = `admin-user-form-${useId()}`
 const UButton = resolveComponent('UButton')
 const columnPinning = ref({
   left: ['person'],
@@ -51,6 +65,18 @@ const columns: TableColumn<UserListItemDto>[] = [
 
 const table = useTemplateRef('table')
 const hasMore = computed(() => hasLoaded.value && users.value.length < totalCount.value)
+const isUserSubmitting = computed(() => userForm.value?.isSubmitting ?? false)
+const userDrawerTitle = computed(() => (
+  userFormMode.value === 'create' ? '建立使用者' : '編輯使用者'
+))
+const userDrawerDescription = computed(() => (
+  userFormMode.value === 'create'
+    ? '建立使用者帳號並設定角色'
+    : '更新使用者資料並調整角色'
+))
+const userSubmitLabel = computed(() => (
+  userFormMode.value === 'create' ? '建立' : '更新'
+))
 
 async function loadUsers(options: { reset?: boolean } = {}) {
   const reset = options.reset ?? false
@@ -107,6 +133,38 @@ async function loadUsers(options: { reset?: boolean } = {}) {
   }
 }
 
+async function handleUnauthorized() {
+  userStore.logOut()
+  systemStore.openModal({
+    title: '系統提示',
+    description: '您的登入已逾期，請重新登入。',
+    preventClose: true
+  })
+  await navigateTo('/login')
+}
+
+async function loadRoles() {
+  try {
+    await userStore.loadRoles()
+  } catch (error) {
+    console.error('[Users] Failed to load roles:', error)
+
+    const normalizedError = normalizeApiError(error, '載入角色資料失敗，請稍後再試。')
+
+    if (normalizedError.statusCode === 401) {
+      await handleUnauthorized()
+      return
+    }
+
+    toast.add({
+      title: '載入角色失敗',
+      description: normalizedError.message,
+      icon: 'i-lucide-circle-x',
+      color: 'error'
+    })
+  }
+}
+
 async function handleSearch() {
   submittedKeyword.value = keyword.value.trim()
 
@@ -118,21 +176,40 @@ async function handleSearch() {
 }
 
 function handleAddUser() {
-  toast.add({
-    title: '新增使用者',
-    description: '新增使用者功能尚未開放。',
-    icon: 'i-lucide-user-round-plus',
-    color: 'info'
-  })
+  selectedUser.value = null
+  userFormMode.value = 'create'
+  isUserDrawerOpen.value = true
 }
 
 function handleEditUser(user: UserListItemDto) {
-  toast.add({
-    title: '編輯使用者',
-    description: `已選取 ${user.EmployeeName || user.UserName || '使用者'}。`,
-    icon: 'i-lucide-user-pen',
-    color: 'info'
-  })
+  selectedUser.value = user
+  userFormMode.value = 'edit'
+  isUserDrawerOpen.value = true
+}
+
+function closeUserDrawer() {
+  if (!isUserSubmitting.value) {
+    isUserDrawerOpen.value = false
+  }
+}
+
+async function submitUserForm() {
+  await userForm.value?.submit()
+}
+
+async function handleUserSaved() {
+  isUserDrawerOpen.value = false
+  await loadUsers({ reset: true })
+}
+
+function handleUserDrawerAnimationEnd(open: boolean) {
+  if (open) {
+    return
+  }
+
+  userForm.value?.reset()
+  selectedUser.value = null
+  userFormMode.value = 'create'
 }
 
 function getHeader(column: Column<UserListItemDto>, label: string, position: 'left' | 'right') {
@@ -151,6 +228,7 @@ function getHeader(column: Column<UserListItemDto>, label: string, position: 'le
 }
 
 onMounted(async () => {
+  const rolesPromise = loadRoles()
   await loadUsers({ reset: true })
 
   const tableElement = table.value?.$el
@@ -170,6 +248,8 @@ onMounted(async () => {
       }
     }
   )
+
+  await rolesPromise
 })
 </script>
 
@@ -309,4 +389,55 @@ onMounted(async () => {
       </UTable>
     </div>
   </div>
+
+  <UDrawer
+    v-model:open="isUserDrawerOpen"
+    direction="right"
+    inset
+    :handle="true"
+    :dismissible="!isUserSubmitting"
+    :title="userDrawerTitle"
+    :description="userDrawerDescription"
+    :ui="{
+      content: 'w-md!',
+      container: 'h-full min-h-0 overflow-hidden',
+      header: 'shrink-0',
+      body: 'min-h-0 overflow-y-auto',
+      footer: 'grid shrink-0 grid-cols-2 gap-2.5'
+    }"
+    @animation-end="handleUserDrawerAnimationEnd"
+  >
+    <template #body>
+      <UserForm
+        v-if="isUserDrawerOpen"
+        :key="`${userFormMode}-${selectedUser?.Id ?? 'new'}`"
+        ref="userForm"
+        :mode="userFormMode"
+        :selected-user="selectedUser"
+        :form-id="userFormId"
+        @saved="handleUserSaved"
+      />
+    </template>
+
+    <template #footer>
+      <UButton
+        type="button"
+        label="取消"
+        color="neutral"
+        variant="outline"
+        block
+        :disabled="isUserSubmitting"
+        @click="closeUserDrawer"
+      />
+      <UButton
+        type="button"
+        :label="userSubmitLabel"
+        color="neutral"
+        block
+        :loading="isUserSubmitting"
+        :disabled="isUserSubmitting"
+        @click="submitUserForm"
+      />
+    </template>
+  </UDrawer>
 </template>

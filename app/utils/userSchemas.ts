@@ -21,4 +21,38 @@ export const personalUserUpdateSchema = z.object({
   PhoneNumber: phoneNumberSchema
 })
 
+const emailSchema = z.string()
+  .trim()
+  .min(1, '請輸入 Email')
+  .email('請輸入有效的電子信箱')
+
+const passwordSchema = z.string()
+  .min(8, '密碼至少需要 8 個字元')
+  .max(20, '密碼不可超過 20 個字元')
+  .regex(/[a-z]/, '密碼需包含小寫字母')
+  .regex(/[A-Z]/, '密碼需包含大寫字母')
+  .regex(/\d/, '密碼需包含數字')
+
+export const adminUserEditSchema = z.object({
+  EmployeeName: employeeNameSchema,
+  Email: emailSchema,
+  PhoneNumber: phoneNumberSchema,
+  IsActive: z.boolean(),
+  Roles: z.array(z.string())
+})
+
+export const adminUserCreateSchema = adminUserEditSchema
+  .extend({
+    Password: passwordSchema,
+    PasswordConfirm: z.string().min(1, '請再次輸入密碼')
+  })
+  .refine(
+    data => data.Password === data.PasswordConfirm,
+    {
+      path: ['PasswordConfirm'],
+      message: '兩次輸入的密碼不一致'
+    }
+  )
+
 export type PersonalUserUpdateForm = z.output<typeof personalUserUpdateSchema>
+export type AdminUserForm = z.output<typeof adminUserCreateSchema>
