@@ -25,7 +25,6 @@ const emit = defineEmits<{
 interface RoleOption {
   label: string
   value: string
-  icon: string
 }
 
 const { $api } = useNuxtApp()
@@ -64,10 +63,7 @@ const roleOptions = computed<RoleOption[]>(() => {
     const label = role.RoleDesc?.trim() || role.RoleName
     roles.set(role.RoleName, {
       label,
-      value: role.RoleName,
-      icon: /管理|admin/i.test(label)
-        ? 'i-lucide-user-cog'
-        : 'i-lucide-circle-user-round'
+      value: role.RoleName
     })
   }
 
@@ -409,17 +405,13 @@ defineExpose({
         :ui="{ container: 'mt-0 min-w-0 w-full' }"
       >
         <div class="w-full min-w-0">
-          <USelectMenu
+          <UCheckboxGroup
             v-model="state.Roles"
             :items="roleOptions"
             value-key="value"
             label-key="label"
-            multiple
-            :loading="userStore.isLoadingRoles"
-            :disabled="userStore.isLoadingRoles || isSubmitting"
-            :search-input="{ placeholder: '搜尋' }"
-            placeholder="請選擇角色"
-            :ui="{ base: 'flex w-full! min-w-0' }"
+            orientation="vertical"
+            :disabled="isSubmitting"
           />
         </div>
       </UFormField>

@@ -5,7 +5,6 @@ export const useUserStore = defineStore('user', () => {
   // 存放當前使用者詳細資訊 (不啟用 persistedstate 持久化，防範 SSR 水合問題)
   const user = ref<UserInfoDto | null>(null)
   const roles = ref<RoleResponse[]>([])
-  const isLoadingRoles = ref(false)
   let rolesRequest: Promise<void> | null = null
   let rolesLoadVersion = 0
 
@@ -23,7 +22,6 @@ export const useUserStore = defineStore('user', () => {
     }
 
     const loadVersion = ++rolesLoadVersion
-    isLoadingRoles.value = true
     roles.value = []
 
     rolesRequest = (async () => {
@@ -46,7 +44,6 @@ export const useUserStore = defineStore('user', () => {
         throw error
       } finally {
         if (loadVersion === rolesLoadVersion) {
-          isLoadingRoles.value = false
           rolesRequest = null
         }
       }
@@ -59,7 +56,6 @@ export const useUserStore = defineStore('user', () => {
   function logOut() {
     user.value = null
     roles.value = []
-    isLoadingRoles.value = false
     rolesRequest = null
     rolesLoadVersion++
 
@@ -75,7 +71,6 @@ export const useUserStore = defineStore('user', () => {
     user,
     roles,
     isLoggedIn,
-    isLoadingRoles,
     setUser,
     loadRoles,
     logOut
