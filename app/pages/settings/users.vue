@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
-import { useInfiniteScroll } from '@vueuse/core'
+import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { UserListItemDto, UserListItemDtoPagedResult } from '~/utils/apiEndpoints'
 import type { Column } from '@tanstack/vue-table'
 import type { UserFormMode } from '~/components/user/Form.vue'
+
+interface AppTableExposed {
+  scrollToTop: () => void
+}
 
 interface UserFormExposed {
   isSubmitting: boolean
@@ -41,11 +44,17 @@ const userForm = useTemplateRef<UserFormExposed>('userForm')
 const userFormId = `admin-user-form-${useId()}`
 const UButton = resolveComponent('UButton')
 const columnPinning = ref({
-  left: ['person'],
+  left: ['rowNumber', 'person'],
   right: ['actions']
 })
 
 const columns: TableColumn<UserListItemDto>[] = [
+  {
+    id: 'rowNumber',
+    header: ({ column }) => getHeader(column, '#', 'left'),
+    cell: ({ row }) => h('span', { class: 'block text-center tabular-nums' }, row.index + 1),
+    size: 64
+  },
   { 
     id: 'person',
     accessorKey: 'EmployeeName',
@@ -64,7 +73,7 @@ const columns: TableColumn<UserListItemDto>[] = [
   }
 ]
 
-const table = useTemplateRef('table')
+const table = useTemplateRef<AppTableExposed>('table')
 const hasMore = computed(() => hasLoaded.value && users.value.length < totalCount.value)
 const isUserSubmitting = computed(() => userForm.value?.isSubmitting ?? false)
 const userDrawerTitle = computed(() => (
@@ -169,9 +178,7 @@ async function loadRoles() {
 async function handleSearch() {
   submittedKeyword.value = keyword.value.trim()
 
-  if (table.value?.$el instanceof HTMLElement) {
-    table.value.$el.scrollTo({ top: 0 })
-  }
+  table.value?.scrollToTop()
 
   await loadUsers({ reset: true })
 }
@@ -186,6 +193,14 @@ function handleEditUser(user: UserListItemDto) {
   selectedUser.value = user
   userFormMode.value = 'edit'
   isUserDrawerOpen.value = true
+}
+
+function getUserActionItems(user: UserListItemDto): DropdownMenuItem[] {
+  return [{
+    label: '編輯使用者',
+    icon: 'i-lucide-user-pen',
+    onSelect: () => handleEditUser(user)
+  }]
 }
 
 function closeUserDrawer() {
@@ -231,74 +246,53 @@ function getHeader(column: Column<UserListItemDto>, label: string, position: 'le
 onMounted(async () => {
   const rolesPromise = loadRoles()
   await loadUsers({ reset: true })
-
-  const tableElement = table.value?.$el
-
-  if (!(tableElement instanceof HTMLElement)) {
-    console.error('[Users] Unable to initialize infinite scroll: table element not found')
-    return
-  }
-
-  useInfiniteScroll(
-    tableElement,
-    () => loadUsers(),
-    {
-      distance: 200,
-      canLoadMore: () => {
-        return !isLoading.value && !loadError.value && hasMore.value
-      }
-    }
-  )
-
   await rolesPromise
 })
 </script>
 
 <template>
-  <div class="flex min-w-0 w-full flex-1 flex-col divide-y divide-accented overflow-hidden rounded-lg border border-default">
-    <div class="flex items-center gap-2 overflow-x-auto px-3.5 py-2">
-      <div class="flex min-w-0 flex-1 items-center gap-2">
-        <UInput
-          v-model="keyword"
-          icon="i-lucide-search"
-          placeholder="請輸入關鍵字.."
-          class="max-w-sm min-w-[16ch]"
-        />
+  <AppTable
+    ref="table"
+    v-model:column-pinning="columnPinning"
+    :data="users"
+    :columns="columns"
+    :loading="isLoading"
+    :has-more="hasMore && !loadError"
+    :total="hasLoaded ? totalCount : undefined"
+    sticky
+    infinite-scroll
+    @load-more="loadUsers"
+  >
+    <template #header>
+      <div class="flex items-center gap-2 overflow-x-auto px-3.5 py-2">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <UInput
+            v-model="keyword"
+            icon="i-lucide-search"
+            placeholder="請輸入關鍵字.."
+            class="max-w-sm min-w-[16ch]"
+          />
 
-        <UButton
-          label="搜尋"
-          :loading="isResetting"
-          :disabled="isLoading"
-          @click="handleSearch"
-        />
+          <UButton
+            label="搜尋"
+            :loading="isResetting"
+            :disabled="isLoading"
+            @click="handleSearch"
+          />
+        </div>
+
+        <UTooltip text="新增使用者">
+          <UButton
+            type="button"
+            icon="i-lucide-user-round-plus"
+            color="neutral"
+            variant="outline"
+            @click="handleAddUser"
+          />
+        </UTooltip>
       </div>
+    </template>
 
-      <UTooltip text="新增使用者">
-        <UButton
-          type="button"
-          icon="i-lucide-user-round-plus"
-          color="neutral"
-          variant="outline"
-          @click="handleAddUser"
-        />
-      </UTooltip>
-    </div>
-
-    <div class="min-h-0 min-w-0 flex-1">
-      <UTable
-        ref="table"
-        :data="users"
-        :columns="columns"
-        :loading="isLoading"
-        sticky
-        class="h-full"
-        v-model:column-pinning="columnPinning"
-        :ui="{
-          th: 'whitespace-nowrap',
-          td: 'h-10 truncate py-2',
-          separator: 'z-2',
-        }"
-      >
         <template #person-cell="{ row }">
           <div class="flex items-center gap-2.5">
             <UAvatar
@@ -354,15 +348,18 @@ onMounted(async () => {
         </template>
 
         <template #actions-cell="{ row }">
-          <UTooltip text="編輯使用者">
+          <UDropdownMenu
+            :items="getUserActionItems(row.original)"
+            :content="{ align: 'end' }"
+          >
             <UButton
-              icon="i-lucide-user-pen"
+              icon="i-lucide-ellipsis-vertical"
               color="neutral"
-              variant="subtle"
+              variant="ghost"
               size="md"
-              @click="handleEditUser(row.original)"
+              aria-label="使用者操作"
             />
-          </UTooltip>
+          </UDropdownMenu>
         </template>
 
         <template #empty>
@@ -387,9 +384,7 @@ onMounted(async () => {
             <p class="text-sm text-muted">找不到符合條件的使用者</p>
           </div>
         </template>
-      </UTable>
-    </div>
-  </div>
+  </AppTable>
 
   <UDrawer
     v-model:open="isUserDrawerOpen"
