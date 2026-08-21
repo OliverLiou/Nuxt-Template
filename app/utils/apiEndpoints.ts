@@ -132,6 +132,7 @@ export const apiEndpoints = {
         path: '/Auth/Login',
         options: {
           method: HttpMethod.POST,
+          authMode: 'public' as const,
           body
         }
       }
@@ -143,6 +144,7 @@ export const apiEndpoints = {
         path: '/Auth/AdLogin',
         options: {
           method: HttpMethod.POST,
+          authMode: 'public' as const,
           body
         }
       }
@@ -154,6 +156,7 @@ export const apiEndpoints = {
         path: '/Auth/RefreshToken',
         options: {
           method: HttpMethod.POST,
+          authMode: 'refresh' as const,
           body
         }
       }

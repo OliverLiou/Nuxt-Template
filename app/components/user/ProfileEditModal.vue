@@ -4,7 +4,6 @@ import { personalUserUpdateSchema, type PersonalUserUpdateForm } from '~/utils/u
 
 const isOpen = defineModel<boolean>('open', { default: false })
 const userStore = useUserStore()
-const systemStore = useSystemStore()
 const toast = useToast()
 const { $api } = useNuxtApp()
 const form = useTemplateRef('form')
@@ -114,13 +113,6 @@ async function handleAvatarChange(event: Event) {
     const apiError = normalizeApiError(error)
 
     if (apiError.statusCode === 401) {
-      userStore.logOut()
-      systemStore.openModal({
-        title: '系統提示',
-        description: '您的登入已逾期，請重新登入。',
-        preventClose: true
-      })
-      await navigateTo('/login')
       return
     }
 
@@ -179,13 +171,6 @@ async function onSubmit() {
     const apiError = normalizeApiError(error)
 
     if (apiError.statusCode === 401) {
-      userStore.logOut()
-      systemStore.openModal({
-        title: '系統提示',
-        description: '您的登入已逾期，請重新登入。',
-        preventClose: true
-      })
-      await navigateTo('/login')
       return
     }
 

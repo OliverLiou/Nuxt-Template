@@ -27,7 +27,6 @@ const pageSize = 10
 const { $api } = useNuxtApp()
 const toast = useToast()
 const userStore = useUserStore()
-const systemStore = useSystemStore()
 const keyword = ref('')
 const submittedKeyword = ref('')
 const users = ref<UserListItemDto[]>([])
@@ -127,9 +126,16 @@ async function loadUsers(options: { reset?: boolean } = {}) {
   } catch (error) {
     console.error('[Users] Failed to load users:', error)
 
-    loadError.value = error instanceof Error
-      ? error.message
-      : '載入使用者資料失敗，請稍後再試。'
+    const normalizedError = normalizeApiError(
+      error,
+      '載入使用者資料失敗，請稍後再試。'
+    )
+
+    if (normalizedError.statusCode === 401) {
+      return
+    }
+
+    loadError.value = normalizedError.message
 
     toast.add({
       title: '載入使用者失敗',
@@ -143,16 +149,6 @@ async function loadUsers(options: { reset?: boolean } = {}) {
   }
 }
 
-async function handleUnauthorized() {
-  userStore.logOut()
-  systemStore.openModal({
-    title: '系統提示',
-    description: '您的登入已逾期，請重新登入。',
-    preventClose: true
-  })
-  await navigateTo('/login')
-}
-
 async function loadRoles() {
   try {
     await userStore.loadRoles()
@@ -162,7 +158,6 @@ async function loadRoles() {
     const normalizedError = normalizeApiError(error, '載入角色資料失敗，請稍後再試。')
 
     if (normalizedError.statusCode === 401) {
-      await handleUnauthorized()
       return
     }
 

@@ -30,7 +30,6 @@ interface RoleOption {
 const { $api } = useNuxtApp()
 const toast = useToast()
 const userStore = useUserStore()
-const systemStore = useSystemStore()
 const form = useTemplateRef('form')
 const isSubmitting = ref(false)
 const apiError = ref<string | null>(null)
@@ -94,16 +93,6 @@ function reset() {
   isSubmitting.value = false
 }
 
-async function handleUnauthorized() {
-  userStore.logOut()
-  systemStore.openModal({
-    title: '系統提示',
-    description: '您的登入已逾期，請重新登入。',
-    preventClose: true
-  })
-  await navigateTo('/login')
-}
-
 function createCreateRequest(): AdminCreateUserRequest {
   return {
     UserName: state.UserName.trim(),
@@ -152,19 +141,18 @@ async function onSubmit() {
       console.error('[UserForm] Failed to create user:', error)
 
       const normalizedError = normalizeApiError(error, '建立使用者失敗，請稍後再試。')
-      apiError.value = normalizedError.message
 
+      if (normalizedError.statusCode === 401) {
+        return
+      }
+
+      apiError.value = normalizedError.message
       toast.add({
         title: '建立失敗',
         description: normalizedError.message,
         icon: 'i-lucide-circle-x',
         color: 'error'
       })
-
-      if (normalizedError.statusCode === 401) {
-        await handleUnauthorized()
-        return
-      }
     } finally {
       isSubmitting.value = false
     }
@@ -211,13 +199,12 @@ async function onSubmit() {
     console.error('[UserForm] Failed to update user:', error)
 
     const normalizedError = normalizeApiError(error, '更新使用者資料失敗，請稍後再試。')
-    apiError.value = normalizedError.message
 
     if (normalizedError.statusCode === 401) {
-      await handleUnauthorized()
       return
     }
 
+    apiError.value = normalizedError.message
     toast.add({
       title: '更新失敗',
       description: normalizedError.message,
