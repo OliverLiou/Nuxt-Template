@@ -119,11 +119,46 @@ export interface UserListItemDtoPagedResult {
   TotalCount?: number
 }
 
+export interface FieldChangeDto {
+  FieldName?: string | null
+  OldValue?: string | null
+  NewValue?: string | null
+}
+
+export interface RelatedTableDto {
+  EntityName?: string | null
+  Action?: string | null
+  FieldChanges?: FieldChangeDto[] | null
+}
+
+export interface ChangeLogEventDto {
+  EditorName?: string | null
+  EditorAvatarUrl?: string | null
+  ExecuteTime?: string
+  RelatedTables?: RelatedTableDto[] | null
+}
+
+export interface ChangeLogEventDtoPagedResult {
+  Items?: ChangeLogEventDto[] | null
+  TotalCount?: number
+}
+
 // ============================================================================
 // 3. API Endpoint Catalog
 // ============================================================================
 
 export const apiEndpoints = {
+  changeLog: {
+    findUserChangeLog(userId: string, currentPage: number, pageSize: number) {
+      return {
+        path: `/ChangeLog/FindUserChangeLog/${encodeURIComponent(userId)}/${currentPage}/${pageSize}`,
+        options: {
+          method: HttpMethod.GET
+        }
+      }
+    }
+  },
+
   /** 認證相關端點 */
   auth: {
     /** 一般登入，驗證成功後會回傳 JWT access token 和 refresh token */

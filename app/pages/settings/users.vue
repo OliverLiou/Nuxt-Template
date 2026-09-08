@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
-import type { UserListItemDto, UserListItemDtoPagedResult } from '~/utils/apiEndpoints'
+import type { ChangeLogEventDtoPagedResult, UserListItemDto, UserListItemDtoPagedResult } from '~/utils/apiEndpoints'
+import type { HistoryTimelineEntry } from '~/components/HistoryTimeline.vue'
 import type { Column } from '@tanstack/vue-table'
 import type { UserFormMode } from '~/components/user/Form.vue'
 
@@ -86,6 +87,122 @@ const userDrawerDescription = computed(() => (
 const userSubmitLabel = computed(() => (
   userFormMode.value === 'create' ? '建立' : '更新'
 ))
+
+const isUserHistorySlideoverOpen = ref(false)
+const selectedHistoryUser = ref<UserListItemDto | null>(null)
+const historyItems = ref<HistoryTimelineEntry[]>([])
+const historyCurrentPage = ref(0)
+const historyTotalCount = ref(0)
+const historyHasLoaded = ref(false)
+const isHistoryLoading = ref(false)
+const historyLoadError = ref<string | null>(null)
+const historySession = ref(0)
+const historyScrollArea = useTemplateRef<{ $el: HTMLElement }>('historyScrollArea')
+let historyController: AbortController | null = null
+const historyHasMore = computed(() => historyHasLoaded.value && historyItems.value.length < historyTotalCount.value)
+const historyUserId = computed(() => selectedHistoryUser.value?.Id?.trim() || '')
+const historyDescription = computed(() => {
+  const user = selectedHistoryUser.value
+  return `查看 ${user?.EmployeeName || user?.UserName || '使用者'} 的異動歷程與修改前後內容`
+})
+
+useTableInfiniteScroll({
+  target: () => historyScrollArea.value?.$el,
+  enabled: () => isUserHistorySlideoverOpen.value && historyHasLoaded.value && !historyLoadError.value,
+  loading: isHistoryLoading,
+  hasMore: historyHasMore,
+  onLoadMore: loadUserHistory
+})
+
+function invalidateHistoryRequest() {
+  historySession.value += 1
+  historyController?.abort()
+  historyController = null
+  isHistoryLoading.value = false
+}
+
+function handleViewUserHistory(user: UserListItemDto) {
+  invalidateHistoryRequest()
+  selectedHistoryUser.value = user
+  historyItems.value = []
+  historyCurrentPage.value = 0
+  historyTotalCount.value = 0
+  historyHasLoaded.value = false
+  historyLoadError.value = null
+  isUserHistorySlideoverOpen.value = true
+  void loadUserHistory()
+}
+
+async function loadUserHistory() {
+  if (!isUserHistorySlideoverOpen.value || isHistoryLoading.value || (historyHasLoaded.value && !historyHasMore.value)) {
+    return
+  }
+  if (!historyUserId.value) {
+    historyLoadError.value = '無法查詢：缺少使用者識別碼。'
+    return
+  }
+
+  const session = historySession.value
+  const controller = new AbortController()
+  historyController = controller
+  const pageToLoad = historyCurrentPage.value + 1
+  isHistoryLoading.value = true
+  historyLoadError.value = null
+
+  try {
+    const request = apiEndpoints.changeLog.findUserChangeLog(historyUserId.value, pageToLoad, pageSize)
+    const result = await $api<ChangeLogEventDtoPagedResult>(request.path, {
+      ...request.options,
+      signal: controller.signal
+    })
+    if (session !== historySession.value || controller.signal.aborted) return
+
+    const total = result?.TotalCount
+    if (typeof total !== 'number' || !Number.isInteger(total) || total < 0) {
+      throw new Error('異動紀錄分頁 API 未回傳有效的總筆數')
+    }
+    const items = result.Items ?? []
+    if (!Array.isArray(items)) {
+      throw new Error('異動紀錄分頁 API 回傳的資料格式不正確')
+    }
+    if (!items.length && historyItems.value.length < total) {
+      throw new Error('異動紀錄分頁資料不一致，請重新載入。')
+    }
+
+    const offset = historyItems.value.length
+    const entries: HistoryTimelineEntry[] = items.map((item, index) => ({
+      id: `${session}-${offset + index}`,
+      editorName: item.EditorName || '未知編輯者',
+      editorAvatarUrl: item.EditorAvatarUrl || undefined,
+      changeCount: item.RelatedTables?.length ?? 0,
+      executeTime: item.ExecuteTime
+    }))
+    historyItems.value.push(...entries)
+    historyCurrentPage.value = pageToLoad
+    historyTotalCount.value = total
+    historyHasLoaded.value = true
+  } catch (error) {
+    if (session !== historySession.value || controller.signal.aborted) return
+    const normalizedError = normalizeApiError(error, '載入異動紀錄失敗，請稍後再試。')
+    historyLoadError.value = normalizedError.message
+  } finally {
+    // A closed or replaced session must not clear its successor's loading state.
+    if (session === historySession.value) {
+      isHistoryLoading.value = false
+      historyController = null
+    }
+  }
+}
+
+watch(isUserHistorySlideoverOpen, open => {
+  if (!open) invalidateHistoryRequest()
+}, { flush: 'sync' })
+
+function handleHistoryAfterLeave() {
+  if (!isUserHistorySlideoverOpen.value) selectedHistoryUser.value = null
+}
+
+onBeforeUnmount(invalidateHistoryRequest)
 
 async function loadUsers(options: { reset?: boolean } = {}) {
   const reset = options.reset ?? false
@@ -191,11 +308,18 @@ function handleEditUser(user: UserListItemDto) {
 }
 
 function getUserActionItems(user: UserListItemDto): DropdownMenuItem[] {
-  return [{
-    label: '編輯使用者',
-    icon: 'i-lucide-user-pen',
-    onSelect: () => handleEditUser(user)
-  }]
+  return [
+    {
+      label: '編輯使用者',
+      icon: 'i-lucide-user-pen',
+      onSelect: () => handleEditUser(user)
+    },
+    {
+      label: '異動紀錄',
+      icon: 'i-lucide-timeline',
+      onSelect: () => handleViewUserHistory(user)
+    }
+  ]
 }
 
 function closeUserDrawer() {
@@ -381,11 +505,57 @@ onMounted(async () => {
         </template>
   </AppTable>
 
+  <USlideover
+    v-model:open="isUserHistorySlideoverOpen"
+    side="right"
+    title="異動紀錄"
+    :description="historyDescription"
+    :ui="{
+      content: 'w-112 max-w-full overflow-hidden',
+      header: 'shrink-0 px-6 py-5',
+      wrapper: 'pr-8',
+      body: 'flex min-h-0 overflow-hidden p-3 sm:p-3'
+    }"
+    @after:leave="handleHistoryAfterLeave"
+  >
+    <template #body>
+      <UScrollArea
+        :key="historySession"
+        ref="historyScrollArea"
+        class="h-full min-h-0 w-full"
+        :ui="{ viewport: 'p-1' }"
+      >
+        <HistoryTimeline
+          v-if="historyItems.length || (historyHasLoaded && !isHistoryLoading && !historyLoadError)"
+          :items="historyItems"
+        />
+        <div v-if="isHistoryLoading" role="status" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
+          <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
+          {{ historyHasLoaded ? '載入更多異動紀錄…' : '載入異動紀錄中…' }}
+        </div>
+        <div v-else-if="historyLoadError" role="alert" class="flex flex-col items-center gap-3 py-6 text-center">
+          <p class="text-sm text-error">{{ historyLoadError }}</p>
+          <UButton
+            v-if="historyUserId"
+            label="重新載入"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            @click="loadUserHistory"
+          />
+        </div>
+        <p v-else-if="historyHasLoaded && historyItems.length && !historyHasMore" role="status" class="py-6 text-center text-sm text-muted">
+          沒有更多資料
+        </p>
+      </UScrollArea>
+    </template>
+  </USlideover>
+
   <UDrawer
     v-model:open="isUserDrawerOpen"
     direction="right"
     inset
-    :handle="true"
+    :handle-only="true"
     :dismissible="!isUserSubmitting"
     :title="userDrawerTitle"
     :description="userDrawerDescription"
